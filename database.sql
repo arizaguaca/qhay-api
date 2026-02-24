@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS tables (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    columns JSON NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
