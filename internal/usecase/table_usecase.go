@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/arizaguaca/table/internal/domain"
+	"github.com/google/uuid"
 )
 
 type tableUsecase struct {
@@ -24,6 +25,9 @@ func (u *tableUsecase) Create(ctx context.Context, table *domain.Table) error {
 	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
 	defer cancel()
 
+	if table.ID == "" {
+		table.ID = uuid.New().String()
+	}
 	table.CreatedAt = time.Now()
 	table.UpdatedAt = time.Now()
 
