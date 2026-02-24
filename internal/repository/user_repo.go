@@ -4,22 +4,22 @@ import (
 	"context"
 	"time"
 
-	"github.com/arizaguaca/table/internal/domain"
-	"github.com/arizaguaca/table/internal/infrastructure/mysql"
+	"github.com/arizaguaca/qhay-api/internal/domain"
+	"github.com/arizaguaca/qhay-api/internal/infrastructure/mysql"
 	"gorm.io/gorm"
 )
 
-type gormUserRepository struct {
+type userRepository struct {
 	db *gorm.DB
 }
 
-func NewGormUserRepository(db *gorm.DB) domain.UserRepository {
-	return &gormUserRepository{
+func NewUserRepository(db *gorm.DB) domain.UserRepository {
+	return &userRepository{
 		db: db,
 	}
 }
 
-func (r *gormUserRepository) Create(ctx context.Context, user *domain.User) error {
+func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	model := mysql.UserModel{
 		ID:       user.ID,
 		Name:     user.Name,
@@ -31,7 +31,7 @@ func (r *gormUserRepository) Create(ctx context.Context, user *domain.User) erro
 	return r.db.WithContext(ctx).Create(&model).Error
 }
 
-func (r *gormUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	var model mysql.UserModel
 	if err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (r *gormUserRepository) GetByID(ctx context.Context, id string) (*domain.Us
 	}, nil
 }
 
-func (r *gormUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var model mysql.UserModel
 	if err := r.db.WithContext(ctx).First(&model, "email = ?", email).Error; err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (r *gormUserRepository) GetByEmail(ctx context.Context, email string) (*dom
 	}, nil
 }
 
-func (r *gormUserRepository) Fetch(ctx context.Context) ([]*domain.User, error) {
+func (r *userRepository) Fetch(ctx context.Context) ([]*domain.User, error) {
 	var models []mysql.UserModel
 	if err := r.db.WithContext(ctx).Find(&models).Error; err != nil {
 		return nil, err

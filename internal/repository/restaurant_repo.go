@@ -4,22 +4,22 @@ import (
 	"context"
 	"time"
 
-	"github.com/arizaguaca/table/internal/domain"
-	"github.com/arizaguaca/table/internal/infrastructure/mysql"
+	"github.com/arizaguaca/qhay-api/internal/domain"
+	"github.com/arizaguaca/qhay-api/internal/infrastructure/mysql"
 	"gorm.io/gorm"
 )
 
-type gormRestaurantRepository struct {
+type restaurantRepository struct {
 	db *gorm.DB
 }
 
-func NewGormRestaurantRepository(db *gorm.DB) domain.RestaurantRepository {
-	return &gormRestaurantRepository{
+func NewRestaurantRepository(db *gorm.DB) domain.RestaurantRepository {
+	return &restaurantRepository{
 		db: db,
 	}
 }
 
-func (r *gormRestaurantRepository) Create(ctx context.Context, restaurant *domain.Restaurant) error {
+func (r *restaurantRepository) Create(ctx context.Context, restaurant *domain.Restaurant) error {
 	model := mysql.RestaurantModel{
 		ID:          restaurant.ID,
 		Name:        restaurant.Name,
@@ -33,7 +33,7 @@ func (r *gormRestaurantRepository) Create(ctx context.Context, restaurant *domai
 	return r.db.WithContext(ctx).Create(&model).Error
 }
 
-func (r *gormRestaurantRepository) GetByID(ctx context.Context, id string) (*domain.Restaurant, error) {
+func (r *restaurantRepository) GetByID(ctx context.Context, id string) (*domain.Restaurant, error) {
 	var model mysql.RestaurantModel
 	if err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (r *gormRestaurantRepository) GetByID(ctx context.Context, id string) (*dom
 	}, nil
 }
 
-func (r *gormRestaurantRepository) Fetch(ctx context.Context) ([]*domain.Restaurant, error) {
+func (r *restaurantRepository) Fetch(ctx context.Context) ([]*domain.Restaurant, error) {
 	var models []mysql.RestaurantModel
 	if err := r.db.WithContext(ctx).Find(&models).Error; err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (r *gormRestaurantRepository) Fetch(ctx context.Context) ([]*domain.Restaur
 	return restaurants, nil
 }
 
-func (r *gormRestaurantRepository) GetByOwnerID(ctx context.Context, ownerID string) ([]*domain.Restaurant, error) {
+func (r *restaurantRepository) GetByOwnerID(ctx context.Context, ownerID string) ([]*domain.Restaurant, error) {
 	var models []mysql.RestaurantModel
 	if err := r.db.WithContext(ctx).Where("owner_id = ?", ownerID).Find(&models).Error; err != nil {
 		return nil, err

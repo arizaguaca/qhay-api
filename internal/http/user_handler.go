@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/arizaguaca/table/internal/domain"
+	"github.com/arizaguaca/qhay-api/internal/domain"
 )
 
 type UserHandler struct {

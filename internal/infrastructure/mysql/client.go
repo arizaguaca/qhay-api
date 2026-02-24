@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/arizaguaca/table/internal/config"
+	"github.com/arizaguaca/qhay-api/internal/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -23,7 +23,7 @@ func NewClient(cfg *config.Config) *gorm.DB {
 	}
 
 	// 3. Auto-migraciones
-	err = db.AutoMigrate(&TableModel{}, &UserModel{}, &RestaurantModel{}, &MenuItemModel{})
+	err = db.AutoMigrate(&UserModel{}, &RestaurantModel{}, &MenuItemModel{})
 	if err != nil {
 		log.Printf("Advertencia: Falló la auto-migración: %v", err)
 	}

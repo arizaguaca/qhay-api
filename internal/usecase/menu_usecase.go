@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/arizaguaca/table/internal/domain"
+	"github.com/arizaguaca/qhay-api/internal/domain"
 	"github.com/google/uuid"
 )
 

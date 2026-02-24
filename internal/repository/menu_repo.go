@@ -4,22 +4,22 @@ import (
 	"context"
 	"time"
 
-	"github.com/arizaguaca/table/internal/domain"
-	"github.com/arizaguaca/table/internal/infrastructure/mysql"
+	"github.com/arizaguaca/qhay-api/internal/domain"
+	"github.com/arizaguaca/qhay-api/internal/infrastructure/mysql"
 	"gorm.io/gorm"
 )
 
-type gormMenuRepository struct {
+type menuRepository struct {
 	db *gorm.DB
 }
 
-func NewGormMenuRepository(db *gorm.DB) domain.MenuRepository {
-	return &gormMenuRepository{
+func NewMenuRepository(db *gorm.DB) domain.MenuRepository {
+	return &menuRepository{
 		db: db,
 	}
 }
 
-func (r *gormMenuRepository) Create(ctx context.Context, item *domain.MenuItem) error {
+func (r *menuRepository) Create(ctx context.Context, item *domain.MenuItem) error {
 	model := mysql.MenuItemModel{
 		ID:           item.ID,
 		RestaurantID: item.RestaurantID,
@@ -33,7 +33,7 @@ func (r *gormMenuRepository) Create(ctx context.Context, item *domain.MenuItem) 
 	return r.db.WithContext(ctx).Create(&model).Error
 }
 
-func (r *gormMenuRepository) GetByID(ctx context.Context, id string) (*domain.MenuItem, error) {
+func (r *menuRepository) GetByID(ctx context.Context, id string) (*domain.MenuItem, error) {
 	var model mysql.MenuItemModel
 	if err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (r *gormMenuRepository) GetByID(ctx context.Context, id string) (*domain.Me
 	}, nil
 }
 
-func (r *gormMenuRepository) FetchByRestaurantID(ctx context.Context, restaurantID string) ([]*domain.MenuItem, error) {
+func (r *menuRepository) FetchByRestaurantID(ctx context.Context, restaurantID string) ([]*domain.MenuItem, error) {
 	var models []mysql.MenuItemModel
 	if err := r.db.WithContext(ctx).Where("restaurant_id = ?", restaurantID).Find(&models).Error; err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (r *gormMenuRepository) FetchByRestaurantID(ctx context.Context, restaurant
 	return items, nil
 }
 
-func (r *gormMenuRepository) Update(ctx context.Context, item *domain.MenuItem) error {
+func (r *menuRepository) Update(ctx context.Context, item *domain.MenuItem) error {
 	return r.db.WithContext(ctx).Model(&mysql.MenuItemModel{}).Where("id = ?", item.ID).Updates(map[string]interface{}{
 		"name":         item.Name,
 		"description":  item.Description,
@@ -86,6 +86,6 @@ func (r *gormMenuRepository) Update(ctx context.Context, item *domain.MenuItem) 
 	}).Error
 }
 
-func (r *gormMenuRepository) Delete(ctx context.Context, id string) error {
+func (r *menuRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Delete(&mysql.MenuItemModel{}, "id = ?", id).Error
 }

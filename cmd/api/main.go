@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/arizaguaca/table/internal/config"
-	thttp "github.com/arizaguaca/table/internal/http"
-	"github.com/arizaguaca/table/internal/infrastructure/mysql"
-	"github.com/arizaguaca/table/internal/repository"
-	"github.com/arizaguaca/table/internal/usecase"
+	"github.com/arizaguaca/qhay-api/internal/config"
+	thttp "github.com/arizaguaca/qhay-api/internal/http"
+	"github.com/arizaguaca/qhay-api/internal/infrastructure/mysql"
+	"github.com/arizaguaca/qhay-api/internal/repository"
+	"github.com/arizaguaca/qhay-api/internal/usecase"
 )
 
 func main() {
@@ -20,20 +20,17 @@ func main() {
 	db := mysql.NewClient(cfg)
 
 	// 2. Setup Repositories
-	tableRepo := repository.NewGormTableRepository(db)
-	userRepo := repository.NewGormUserRepository(db)
-	restaurantRepo := repository.NewGormRestaurantRepository(db)
-	menuRepo := repository.NewGormMenuRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	restaurantRepo := repository.NewRestaurantRepository(db)
+	menuRepo := repository.NewMenuRepository(db)
 
 	// 2. Setup Usecases
 	timeoutContext := time.Duration(10) * time.Second
-	tableUsecase := usecase.NewTableUsecase(tableRepo, timeoutContext)
 	userUsecase := usecase.NewUserUsecase(userRepo, timeoutContext)
 	restaurantUsecase := usecase.NewRestaurantUsecase(restaurantRepo, timeoutContext)
 	menuUsecase := usecase.NewMenuUsecase(menuRepo, timeoutContext)
 
 	// 3. Setup Handlers
-	tableHandler := thttp.NewTableHandler(tableUsecase)
 	userHandler := thttp.NewUserHandler(userUsecase)
 	restaurantHandler := thttp.NewRestaurantHandler(restaurantUsecase)
 	menuHandler := thttp.NewMenuHandler(menuUsecase)
@@ -57,16 +54,6 @@ func main() {
 	}
 
 	// Routes
-	mux.HandleFunc("/tables", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			tableHandler.Create(w, r)
-		case http.MethodGet:
-			tableHandler.Fetch(w, r)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
 
 	mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

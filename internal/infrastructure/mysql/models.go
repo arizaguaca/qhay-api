@@ -1,17 +1,5 @@
 package mysql
 
-type TableModel struct {
-	ID        string `gorm:"primaryKey;type:varchar(36)"`
-	Name      string `gorm:"type:varchar(255)"`
-	Columns   string `gorm:"type:text"` // JSON
-	CreatedAt int64  `gorm:"autoCreateTime:milli"`
-	UpdatedAt int64  `gorm:"autoUpdateTime:milli"`
-}
-
-func (TableModel) TableName() string {
-	return "tables"
-}
-
 type UserModel struct {
 	ID        string `gorm:"primaryKey;type:varchar(36)"`
 	Name      string `gorm:"type:varchar(255)"`

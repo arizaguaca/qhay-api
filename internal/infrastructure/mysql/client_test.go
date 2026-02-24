@@ -3,7 +3,7 @@ package mysql
 import (
 	"testing"
 
-	"github.com/arizaguaca/table/internal/config"
+	"github.com/arizaguaca/qhay-api/internal/config"
 )
 
 func TestNewClient(t *testing.T) {
