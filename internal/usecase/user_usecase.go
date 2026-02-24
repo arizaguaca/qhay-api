@@ -33,6 +33,22 @@ func (u *userUsecase) Create(ctx context.Context, user *domain.User) error {
 	return u.userRepo.Create(ctx, user)
 }
 
+func (u *userUsecase) Login(ctx context.Context, email, password string) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.Password != password {
+		return nil, domain.ErrInvalidCredentials
+	}
+
+	return user, nil
+}
+
 func (u *userUsecase) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
 	defer cancel()
@@ -45,6 +61,13 @@ func (u *userUsecase) GetByEmail(ctx context.Context, email string) (*domain.Use
 	defer cancel()
 
 	return u.userRepo.GetByEmail(ctx, email)
+}
+
+func (u *userUsecase) GetByPhone(ctx context.Context, phone string) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	return u.userRepo.GetByPhone(ctx, phone)
 }
 
 func (u *userUsecase) Fetch(ctx context.Context) ([]*domain.User, error) {

@@ -22,6 +22,7 @@ type RestaurantRepository interface {
 	GetByID(ctx context.Context, id string) (*Restaurant, error)
 	Fetch(ctx context.Context) ([]*Restaurant, error)
 	GetByOwnerID(ctx context.Context, ownerID string) ([]*Restaurant, error)
+	Update(ctx context.Context, restaurant *Restaurant) error
 }
 
 type RestaurantUsecase interface {
@@ -29,4 +30,5 @@ type RestaurantUsecase interface {
 	GetByID(ctx context.Context, id string) (*Restaurant, error)
 	Fetch(ctx context.Context) ([]*Restaurant, error)
 	GetByOwnerID(ctx context.Context, ownerID string) ([]*Restaurant, error)
+	Update(ctx context.Context, restaurant *Restaurant) error
 }

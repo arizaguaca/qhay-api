@@ -23,7 +23,7 @@ func NewClient(cfg *config.Config) *gorm.DB {
 	}
 
 	// 3. Auto-migraciones
-	err = db.AutoMigrate(&UserModel{}, &RestaurantModel{}, &MenuItemModel{})
+	err = db.AutoMigrate(&UserModel{}, &RestaurantModel{}, &MenuItemModel{}, &QRCodeModel{}, &OperatingHourModel{}, &VerificationCodeModel{})
 	if err != nil {
 		log.Printf("Advertencia: Falló la auto-migración: %v", err)
 	}

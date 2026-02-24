@@ -11,6 +11,7 @@ type MenuItem struct {
 	Name         string    `json:"name"`
 	Description  string    `json:"description"`
 	Price        float64   `json:"price"`
+	PrepTime     int       `json:"prep_time"` // in minutes
 	ImageURL     string    `json:"image_url"`
 	IsAvailable  bool      `json:"is_available"`
 	CreatedAt    time.Time `json:"created_at"`

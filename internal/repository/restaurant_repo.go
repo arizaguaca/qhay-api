@@ -99,3 +99,17 @@ func (r *restaurantRepository) GetByOwnerID(ctx context.Context, ownerID string)
 
 	return restaurants, nil
 }
+
+func (r *restaurantRepository) Update(ctx context.Context, restaurant *domain.Restaurant) error {
+	model := mysql.RestaurantModel{
+		ID:          restaurant.ID,
+		Name:        restaurant.Name,
+		Description: restaurant.Description,
+		Address:     restaurant.Address,
+		Phone:       restaurant.Phone,
+		OwnerID:     restaurant.OwnerID,
+		LogoURL:     restaurant.LogoURL,
+	}
+
+	return r.db.WithContext(ctx).Save(&model).Error
+}

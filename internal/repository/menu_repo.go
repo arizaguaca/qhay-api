@@ -26,6 +26,7 @@ func (r *menuRepository) Create(ctx context.Context, item *domain.MenuItem) erro
 		Name:         item.Name,
 		Description:  item.Description,
 		Price:        item.Price,
+		PrepTime:     item.PrepTime,
 		ImageURL:     item.ImageURL,
 		IsAvailable:  item.IsAvailable,
 	}
@@ -45,6 +46,7 @@ func (r *menuRepository) GetByID(ctx context.Context, id string) (*domain.MenuIt
 		Name:         model.Name,
 		Description:  model.Description,
 		Price:        model.Price,
+		PrepTime:     model.PrepTime,
 		ImageURL:     model.ImageURL,
 		IsAvailable:  model.IsAvailable,
 		CreatedAt:    time.UnixMilli(model.CreatedAt),
@@ -66,6 +68,7 @@ func (r *menuRepository) FetchByRestaurantID(ctx context.Context, restaurantID s
 			Name:         m.Name,
 			Description:  m.Description,
 			Price:        m.Price,
+			PrepTime:     m.PrepTime,
 			ImageURL:     m.ImageURL,
 			IsAvailable:  m.IsAvailable,
 			CreatedAt:    time.UnixMilli(m.CreatedAt),
@@ -81,6 +84,7 @@ func (r *menuRepository) Update(ctx context.Context, item *domain.MenuItem) erro
 		"name":         item.Name,
 		"description":  item.Description,
 		"price":        item.Price,
+		"prep_time":    item.PrepTime,
 		"image_url":    item.ImageURL,
 		"is_available": item.IsAvailable,
 	}).Error

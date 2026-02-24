@@ -53,3 +53,11 @@ func (u *restaurantUsecase) GetByOwnerID(ctx context.Context, ownerID string) ([
 
 	return u.restaurantRepo.GetByOwnerID(ctx, ownerID)
 }
+
+func (u *restaurantUsecase) Update(ctx context.Context, restaurant *domain.Restaurant) error {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	restaurant.UpdatedAt = time.Now()
+	return u.restaurantRepo.Update(ctx, restaurant)
+}
