@@ -62,7 +62,16 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) Fetch(w http.ResponseWriter, r *http.Request) {
-	users, err := h.Usecase.Fetch(r.Context())
+	restaurantID := r.URL.Query().Get("restaurant_id")
+	var users []*domain.User
+	var err error
+
+	if restaurantID != "" {
+		users, err = h.Usecase.FetchByRestaurantID(r.Context(), restaurantID)
+	} else {
+		users, err = h.Usecase.Fetch(r.Context())
+	}
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -70,6 +79,37 @@ func (h *UserHandler) Fetch(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
+	var user domain.User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, "Malformed JSON", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.Usecase.Update(r.Context(), &user); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
+func (h *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Missing id parameter", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.Usecase.Delete(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -88,3 +128,4 @@ func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
+

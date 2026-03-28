@@ -30,6 +30,9 @@ func main() {
 	qrCodeRepo := repository.NewQRCodeRepository(db)
 	operatingHourRepo := repository.NewOperatingHourRepository(db)
 	verificationRepo := repository.NewVerificationRepository(db)
+	reservationRepo := repository.NewReservationRepository(db)
+	orderRepo := repository.NewOrderRepository(db)
+	customerRepo := repository.NewCustomerRepository(db)
 
 	// 2. Setup Usecases
 	timeoutContext := time.Duration(10) * time.Second
@@ -49,14 +52,20 @@ func main() {
 	} else {
 		smsService = infrastructure.NewConsoleSMSService()
 	}
-	verificationUsecase := usecase.NewVerificationUsecase(verificationRepo, userRepo, smsService, timeoutContext)
+	verificationUsecase := usecase.NewVerificationUsecase(verificationRepo, customerRepo, smsService, timeoutContext)
+	reservationUsecase := usecase.NewReservationUsecase(reservationRepo, timeoutContext)
+	orderUsecase := usecase.NewOrderUsecase(orderRepo, timeoutContext)
 
 	// 3. Setup Handlers
 	userHandler := thttp.NewUserHandler(userUsecase)
 	restaurantHandler := thttp.NewRestaurantHandler(restaurantUsecase, qrCodeUsecase, menuUsecase, operatingHourUsecase)
 	menuHandler := thttp.NewMenuHandler(menuUsecase)
 	qrCodeHandler := thttp.NewQRCodeHandler(qrCodeUsecase)
-	verificationHandler := thttp.NewVerificationHandler(verificationUsecase, userUsecase)
+	verificationHandler := thttp.NewVerificationHandler(verificationUsecase, customerRepo)
+	reservationHandler := thttp.NewReservationHandler(reservationUsecase)
+
+	orderHandler := thttp.NewOrderHandler(orderUsecase)
+
 
 	// 4. Setup Routes
 	mux := http.NewServeMux()
@@ -71,7 +80,6 @@ func main() {
 			if r.Method == "OPTIONS" {
 				return
 			}
-
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -106,6 +114,28 @@ func main() {
 		verificationHandler.Verify(w, r)
 	})
 
+	mux.HandleFunc("/reservations", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			reservationHandler.Create(w, r)
+		case http.MethodGet:
+			reservationHandler.GetByUser(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/reservations/", func(w http.ResponseWriter, r *http.Request) {
+		parts := strings.Split(r.URL.Path, "/")
+		if len(parts) >= 4 && parts[3] == "status" {
+			if r.Method == http.MethodPut {
+				reservationHandler.UpdateStatus(w, r)
+				return
+			}
+		}
+		http.Error(w, "Invalid path", http.StatusNotFound)
+	})
+
 	mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
@@ -116,10 +146,39 @@ func main() {
 			} else {
 				userHandler.Fetch(w, r)
 			}
+		case http.MethodPut:
+			userHandler.Update(w, r)
+		case http.MethodDelete:
+			userHandler.Delete(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
+
+	mux.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			orderHandler.Create(w, r)
+		case http.MethodGet:
+			orderHandler.Fetch(w, r)
+
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/orders/", func(w http.ResponseWriter, r *http.Request) {
+		parts := strings.Split(r.URL.Path, "/")
+		if len(parts) >= 4 && parts[3] == "status" {
+			if r.Method == http.MethodPut {
+				orderHandler.UpdateStatus(w, r)
+				return
+			}
+		}
+		http.Error(w, "Invalid path", http.StatusNotFound)
+	})
+
+
 
 	mux.HandleFunc("/menu/", func(w http.ResponseWriter, r *http.Request) {
 		parts := strings.Split(r.URL.Path, "/")
@@ -205,6 +264,11 @@ func main() {
 			case "logo":
 				if r.Method == http.MethodPost {
 					restaurantHandler.UploadLogo(w, r)
+					return
+				}
+			case "reservations":
+				if r.Method == http.MethodGet {
+					reservationHandler.GetByRestaurant(w, r)
 					return
 				}
 			}

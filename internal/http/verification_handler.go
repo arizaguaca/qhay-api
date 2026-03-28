@@ -8,16 +8,17 @@ import (
 )
 
 type VerificationHandler struct {
-	Usecase     domain.VerificationUsecase
-	UserUsecase domain.UserUsecase
+	Usecase      domain.VerificationUsecase
+	CustomerRepo domain.CustomerRepository
 }
 
-func NewVerificationHandler(u domain.VerificationUsecase, uu domain.UserUsecase) *VerificationHandler {
+func NewVerificationHandler(u domain.VerificationUsecase, cr domain.CustomerRepository) *VerificationHandler {
 	return &VerificationHandler{
-		Usecase:     u,
-		UserUsecase: uu,
+		Usecase:      u,
+		CustomerRepo: cr,
 	}
 }
+
 
 func (h *VerificationHandler) SendCode(w http.ResponseWriter, r *http.Request) {
 	var input struct {
@@ -29,14 +30,33 @@ func (h *VerificationHandler) SendCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 1. Check if customer already exists
+	customer, err := h.CustomerRepo.GetByPhone(r.Context(), input.Phone)
+	if err == nil && customer != nil {
+		// Customer exists, skip code and return ID
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"exists":      true,
+			"customer_id": customer.ID,
+			"customer":    customer,
+			"message":     "Existing customer, skip verification",
+		})
+		return
+	}
+
+	// 2. If not, send code as usual
 	if err := h.Usecase.SendCode(r.Context(), input.Phone); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Verification code sent"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"exists":  false,
+		"message": "Verification code sent",
+	})
 }
+
 
 func (h *VerificationHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	var input struct {
@@ -49,25 +69,25 @@ func (h *VerificationHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := h.Usecase.VerifyCode(r.Context(), input.Phone, input.Code)
+	userID, err := h.Usecase.VerifyCode(r.Context(), input.Phone, input.Code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	if !success {
-		http.Error(w, "Invalid verification code", http.StatusUnauthorized)
+	// Fetch full customer details to return to frontend
+	customer, err := h.CustomerRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Error fetching customer details", http.StatusInternalServerError)
 		return
 	}
-
-	// Check if user exists to tell frontend if registration is needed
-	user, err := h.UserUsecase.GetByPhone(r.Context(), input.Phone)
-	isRegistered := err == nil && user != nil
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"verified":      true,
-		"is_registered": isRegistered,
-		"user":          user,
+		"verified":    true,
+		"customer_id": userID,
+		"customer":    customer,
 	})
 }
+
+
