@@ -5,9 +5,11 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     password VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
+    restaurant_id VARCHAR(36),
     is_verified BOOLEAN DEFAULT FALSE,
     created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
+    updated_at DATETIME NOT NULL,
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
 );
 
 -- ... (other tables)
@@ -70,4 +72,53 @@ CREATE TABLE IF NOT EXISTS operating_hours (
     updated_at DATETIME NOT NULL,
     FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
 );
+
+CREATE TABLE IF NOT EXISTS reservations (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    restaurant_id VARCHAR(36) NOT NULL,
+    table_number INT,
+    reservation_date BIGINT NOT NULL,
+    guests INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
+);
+
+CREATE TABLE IF NOT EXISTS customers (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255),
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    id VARCHAR(36) PRIMARY KEY,
+    restaurant_id VARCHAR(36) NOT NULL,
+    customer_id VARCHAR(36) NOT NULL,
+    table_number INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    total_price DECIMAL(10, 2) NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(id),
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+);
+
+
+
+CREATE TABLE IF NOT EXISTS order_items (
+    id VARCHAR(36) PRIMARY KEY,
+    order_id VARCHAR(36) NOT NULL,
+    menu_item_id VARCHAR(36) NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+);
+
 

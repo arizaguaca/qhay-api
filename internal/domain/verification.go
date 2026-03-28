@@ -25,5 +25,6 @@ type VerificationRepository interface {
 
 type VerificationUsecase interface {
 	SendCode(ctx context.Context, phone string) error
-	VerifyCode(ctx context.Context, phone string, code string) (bool, error)
+	VerifyCode(ctx context.Context, phone string, code string) (string, error)
 }
+

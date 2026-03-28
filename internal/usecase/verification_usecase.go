@@ -13,24 +13,25 @@ import (
 
 type verificationUsecase struct {
 	verifyRepo     domain.VerificationRepository
-	userRepo       domain.UserRepository
+	customerRepo   domain.CustomerRepository
 	smsService     domain.SMSService
 	contextTimeout time.Duration
 }
 
 func NewVerificationUsecase(
 	vr domain.VerificationRepository,
-	ur domain.UserRepository,
+	cr domain.CustomerRepository,
 	sms domain.SMSService,
 	timeout time.Duration,
 ) domain.VerificationUsecase {
 	return &verificationUsecase{
 		verifyRepo:     vr,
-		userRepo:       ur,
+		customerRepo:   cr,
 		smsService:     sms,
 		contextTimeout: timeout,
 	}
 }
+
 
 func (u *verificationUsecase) SendCode(ctx context.Context, phone string) error {
 	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
@@ -54,34 +55,41 @@ func (u *verificationUsecase) SendCode(ctx context.Context, phone string) error 
 	return u.smsService.SendSMS(ctx, phone, message)
 }
 
-func (u *verificationUsecase) VerifyCode(ctx context.Context, phone string, code string) (bool, error) {
+func (u *verificationUsecase) VerifyCode(ctx context.Context, phone string, code string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
 	defer cancel()
 
 	verification, err := u.verifyRepo.GetLatestByPhone(ctx, phone)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	if verification.Code != code {
-		return false, nil
+		return "", fmt.Errorf("invalid verification code")
 	}
 
-	// Code is valid - find or create user
-	user, err := u.userRepo.GetByPhone(ctx, phone)
+	// Code is valid - find or create customer
+	customer, err := u.customerRepo.GetByPhone(ctx, phone)
 	if err != nil {
-		// User doesn't exist, they should be redirected to registration or we create a skeleton
-		return true, nil
+		// Customer doesn't exist, create a new one
+		newCustomer := &domain.Customer{
+			ID:        uuid.New().String(),
+			Name:      "Customer",
+			Phone:     phone,
+			IsActive:  true,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := u.customerRepo.Create(ctx, newCustomer); err != nil {
+			return "", err
+		}
+		return newCustomer.ID, nil
 	}
 
-	// Update user as verified
-	user.IsVerified = true
-	if err := u.userRepo.Update(ctx, user); err != nil {
-		return true, err
-	}
-
-	return true, nil
+	return customer.ID, nil
 }
+
+
 
 func generateRandomCode(n int) (string, error) {
 	const digits = "0123456789"
