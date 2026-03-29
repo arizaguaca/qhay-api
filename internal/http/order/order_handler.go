@@ -1,9 +1,9 @@
-package http
+package order
 
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
+
 
 	"github.com/arizaguaca/qhay-api/internal/domain"
 )
@@ -60,15 +60,13 @@ func (h *OrderHandler) Fetch(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(orders)
 }
 
-
 func (h *OrderHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
-	// Path example: /orders/uuid/status
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Pattern: /orders/{id}/status
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "Missing order id", http.StatusBadRequest)
 		return
 	}
-	id := parts[2]
 
 	var input struct {
 		Status string `json:"status"`
@@ -85,3 +83,5 @@ func (h *OrderHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+

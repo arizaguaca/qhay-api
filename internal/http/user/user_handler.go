@@ -1,4 +1,4 @@
-package http
+package user
 
 import (
 	"encoding/json"
@@ -61,33 +61,20 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-func (h *UserHandler) Fetch(w http.ResponseWriter, r *http.Request) {
-	restaurantID := r.URL.Query().Get("restaurant_id")
-	var users []*domain.User
-	var err error
-
-	if restaurantID != "" {
-		users, err = h.Usecase.FetchByRestaurantID(r.Context(), restaurantID)
-	} else {
-		users, err = h.Usecase.Fetch(r.Context())
-	}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "Missing id parameter", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
-}
-
-func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var user domain.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, "Malformed JSON", http.StatusBadRequest)
 		return
 	}
 
+	user.ID = id
 	if err := h.Usecase.Update(r.Context(), &user); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -98,7 +85,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
+	id := r.PathValue("id")
 	if id == "" {
 		http.Error(w, "Missing id parameter", http.StatusBadRequest)
 		return
@@ -113,7 +100,12 @@ func (h *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
+	// Try PathValue first (RESTful), then Query (backward compatibility)
+	id := r.PathValue("id")
+	if id == "" {
+		id = r.URL.Query().Get("id")
+	}
+
 	if id == "" {
 		http.Error(w, "Missing id parameter", http.StatusBadRequest)
 		return
@@ -128,4 +120,3 @@ func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
-

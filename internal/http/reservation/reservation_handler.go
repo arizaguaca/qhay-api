@@ -1,9 +1,9 @@
-package http
+package reservation
 
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
+
 
 	"github.com/arizaguaca/qhay-api/internal/domain"
 )
@@ -36,13 +36,12 @@ func (h *ReservationHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ReservationHandler) GetByRestaurant(w http.ResponseWriter, r *http.Request) {
-	// Path example: /restaurants/UUID/reservations
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Path: /restaurants/{id}/reservations
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
 		return
 	}
-	restaurantID := parts[2]
 
 	reservations, err := h.Usecase.FetchByRestaurantID(r.Context(), restaurantID)
 	if err != nil {
@@ -72,13 +71,12 @@ func (h *ReservationHandler) GetByUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ReservationHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
-	// Path example: /reservations/UUID/status
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Pattern: /reservations/{id}/status
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "Missing reservation id", http.StatusBadRequest)
 		return
 	}
-	id := parts[2]
 
 	var input struct {
 		Status string `json:"status"`
@@ -96,3 +94,5 @@ func (h *ReservationHandler) UpdateStatus(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Reservation status updated"})
 }
+
+

@@ -1,4 +1,4 @@
-package usecase
+package operating_hour
 
 import (
 	"context"

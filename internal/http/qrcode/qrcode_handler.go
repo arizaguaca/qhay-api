@@ -1,9 +1,9 @@
-package http
+package qrcode
 
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
+
 
 	"github.com/arizaguaca/qhay-api/internal/domain"
 )
@@ -21,8 +21,7 @@ func NewQRCodeHandler(u domain.QRCodeUsecase) *QRCodeHandler {
 func (h *QRCodeHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		RestaurantID string `json:"restaurant_id"`
-		TableNumber  int    `json:"table_number"`
-		Label        string `json:"label"`
+		TableCount   int    `json:"table_count"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -30,42 +29,30 @@ func (h *QRCodeHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.RestaurantID == "" || input.TableNumber <= 0 {
-		http.Error(w, "restaurant_id and a valid table_number are required", http.StatusBadRequest)
+	if input.RestaurantID == "" || input.TableCount <= 0 {
+		http.Error(w, "restaurant_id and a valid table_count (>0) are required", http.StatusBadRequest)
 		return
 	}
 
-	qrCode, err := h.Usecase.Generate(r.Context(), input.RestaurantID, input.TableNumber)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	var generatedQRs []*domain.QRCode
 
-	// Update label if provided
-	if input.Label != "" {
-		qrCode.Label = input.Label
-		// Note: We might need an Update method in usecase to persist this if it was an "existing" QR
-		// But for now Generate handles creation with a default label.
+	for i := 1; i <= input.TableCount; i++ {
+		qrCode, err := h.Usecase.Generate(r.Context(), input.RestaurantID, i)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		generatedQRs = append(generatedQRs, qrCode)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(qrCode)
+	json.NewEncoder(w).Encode(generatedQRs)
 }
 
 func (h *QRCodeHandler) GetByRestaurant(w http.ResponseWriter, r *http.Request) {
 	// Try to get from query first, then from path if using a custom router or manual parsing
 	restaurantID := r.URL.Query().Get("restaurant_id")
-
-	// If using standard mux and paths like /restaurants/{id}/qrs,
-	// we need a slightly more complex parsing if we don't use a router like chi or gorilla/mux
-	if restaurantID == "" {
-		// Basic manual parsing for /restaurants/{id}/qrs
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) >= 4 && parts[1] == "restaurants" && parts[3] == "qrs" {
-			restaurantID = parts[2]
-		}
-	}
 
 	if restaurantID == "" {
 		http.Error(w, "Missing restaurant_id parameter", http.StatusBadRequest)
@@ -119,3 +106,5 @@ func (h *QRCodeHandler) GetImage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(imageBytes)
 }
+
+

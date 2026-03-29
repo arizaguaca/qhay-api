@@ -1,4 +1,4 @@
-package usecase
+package user
 
 import (
 	"context"
@@ -70,19 +70,13 @@ func (u *userUsecase) GetByPhone(ctx context.Context, phone string) (*domain.Use
 	return u.userRepo.GetByPhone(ctx, phone)
 }
 
-func (u *userUsecase) FetchByRestaurantID(ctx context.Context, restaurantID string) ([]*domain.User, error) {
-	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
-	defer cancel()
-
-	return u.userRepo.FetchByRestaurantID(ctx, restaurantID)
-}
-
 func (u *userUsecase) Fetch(ctx context.Context) ([]*domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
 	defer cancel()
 
 	return u.userRepo.Fetch(ctx)
 }
+
 
 func (u *userUsecase) Update(ctx context.Context, user *domain.User) error {
 	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)

@@ -1,4 +1,4 @@
-package usecase
+package verification
 
 import (
 	"context"

@@ -21,14 +21,13 @@ func NewUserRepository(db *gorm.DB) domain.UserRepository {
 
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	model := mysql.UserModel{
-		ID:           user.ID,
-		Name:         user.Name,
-		Email:        user.Email,
-		Phone:        user.Phone,
-		Password:     user.Password,
-		Role:         user.Role,
-		RestaurantID: user.RestaurantID,
-		IsVerified:   user.IsVerified,
+		ID:         user.ID,
+		Name:       user.Name,
+		Email:      user.Email,
+		Phone:      user.Phone,
+		Password:   user.Password,
+		Role:       user.Role,
+		IsVerified: user.IsVerified,
 	}
 
 	return r.db.WithContext(ctx).Create(&model).Error
@@ -36,14 +35,13 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 
 func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 	model := mysql.UserModel{
-		ID:           user.ID,
-		Name:         user.Name,
-		Email:        user.Email,
-		Phone:        user.Phone,
-		Password:     user.Password,
-		Role:         user.Role,
-		RestaurantID: user.RestaurantID,
-		IsVerified:   user.IsVerified,
+		ID:         user.ID,
+		Name:       user.Name,
+		Email:      user.Email,
+		Phone:      user.Phone,
+		Password:   user.Password,
+		Role:       user.Role,
+		IsVerified: user.IsVerified,
 	}
 
 	return r.db.WithContext(ctx).Save(&model).Error
@@ -56,15 +54,14 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 	}
 
 	return &domain.User{
-		ID:           model.ID,
-		Name:         model.Name,
-		Email:        model.Email,
-		Phone:        model.Phone,
-		Role:         model.Role,
-		RestaurantID: model.RestaurantID,
-		IsVerified:   model.IsVerified,
-		CreatedAt:    time.UnixMilli(model.CreatedAt),
-		UpdatedAt:    time.UnixMilli(model.UpdatedAt),
+		ID:         model.ID,
+		Name:       model.Name,
+		Email:      model.Email,
+		Phone:      model.Phone,
+		Role:       model.Role,
+		IsVerified: model.IsVerified,
+		CreatedAt:  time.UnixMilli(model.CreatedAt),
+		UpdatedAt:  time.UnixMilli(model.UpdatedAt),
 	}, nil
 }
 
@@ -75,16 +72,15 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	}
 
 	return &domain.User{
-		ID:           model.ID,
-		Name:         model.Name,
-		Email:        model.Email,
-		Phone:        model.Phone,
-		Password:     model.Password,
-		Role:         model.Role,
-		RestaurantID: model.RestaurantID,
-		IsVerified:   model.IsVerified,
-		CreatedAt:    time.UnixMilli(model.CreatedAt),
-		UpdatedAt:    time.UnixMilli(model.UpdatedAt),
+		ID:         model.ID,
+		Name:       model.Name,
+		Email:      model.Email,
+		Phone:      model.Phone,
+		Password:   model.Password,
+		Role:       model.Role,
+		IsVerified: model.IsVerified,
+		CreatedAt:  time.UnixMilli(model.CreatedAt),
+		UpdatedAt:  time.UnixMilli(model.UpdatedAt),
 	}, nil
 }
 
@@ -95,16 +91,15 @@ func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*domain.
 	}
 
 	return &domain.User{
-		ID:           model.ID,
-		Name:         model.Name,
-		Email:        model.Email,
-		Phone:        model.Phone,
-		Password:     model.Password,
-		Role:         model.Role,
-		RestaurantID: model.RestaurantID,
-		IsVerified:   model.IsVerified,
-		CreatedAt:    time.UnixMilli(model.CreatedAt),
-		UpdatedAt:    time.UnixMilli(model.UpdatedAt),
+		ID:         model.ID,
+		Name:       model.Name,
+		Email:      model.Email,
+		Phone:      model.Phone,
+		Password:   model.Password,
+		Role:       model.Role,
+		IsVerified: model.IsVerified,
+		CreatedAt:  time.UnixMilli(model.CreatedAt),
+		UpdatedAt:  time.UnixMilli(model.UpdatedAt),
 	}, nil
 }
 
@@ -117,40 +112,18 @@ func (r *userRepository) Fetch(ctx context.Context) ([]*domain.User, error) {
 	users := make([]*domain.User, 0, len(models))
 	for _, m := range models {
 		users = append(users, &domain.User{
-			ID:           m.ID,
-			Name:         m.Name,
-			Email:        m.Email,
-			Role:         m.Role,
-			RestaurantID: m.RestaurantID,
-			CreatedAt:    time.UnixMilli(m.CreatedAt),
-			UpdatedAt:    time.UnixMilli(m.UpdatedAt),
+			ID:        m.ID,
+			Name:      m.Name,
+			Email:     m.Email,
+			Role:      m.Role,
+			CreatedAt: time.UnixMilli(m.CreatedAt),
+			UpdatedAt: time.UnixMilli(m.UpdatedAt),
 		})
 	}
 
 	return users, nil
 }
 
-func (r *userRepository) FetchByRestaurantID(ctx context.Context, restaurantID string) ([]*domain.User, error) {
-	var models []mysql.UserModel
-	if err := r.db.WithContext(ctx).Where("restaurant_id = ?", restaurantID).Find(&models).Error; err != nil {
-		return nil, err
-	}
-
-	users := make([]*domain.User, 0, len(models))
-	for _, m := range models {
-		users = append(users, &domain.User{
-			ID:           m.ID,
-			Name:         m.Name,
-			Email:        m.Email,
-			Role:         m.Role,
-			RestaurantID: m.RestaurantID,
-			CreatedAt:    time.UnixMilli(m.CreatedAt),
-			UpdatedAt:    time.UnixMilli(m.UpdatedAt),
-		})
-	}
-
-	return users, nil
-}
 
 func (r *userRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Delete(&mysql.UserModel{}, "id = ?", id).Error

@@ -1,4 +1,4 @@
-package http
+package verification
 
 import (
 	"encoding/json"
@@ -89,5 +89,7 @@ func (h *VerificationHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		"customer":    customer,
 	})
 }
+
+
 
 

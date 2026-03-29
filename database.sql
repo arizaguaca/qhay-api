@@ -122,3 +122,15 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 
+CREATE TABLE IF NOT EXISTS staffs (
+    id VARCHAR(36) PRIMARY KEY,
+    restaurant_id VARCHAR(36) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
+);

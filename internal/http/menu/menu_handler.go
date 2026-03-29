@@ -1,4 +1,4 @@
-package http
+package menu
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/arizaguaca/qhay-api/internal/domain"
 )
@@ -57,12 +56,19 @@ func (h *MenuHandler) FetchByRestaurant(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *MenuHandler) Update(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "Missing id parameter in route", http.StatusBadRequest)
+		return
+	}
+
 	var item domain.MenuItem
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
 		http.Error(w, "Malformed JSON", http.StatusBadRequest)
 		return
 	}
 
+	item.ID = id
 	if err := h.Usecase.Update(r.Context(), &item); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -73,9 +79,9 @@ func (h *MenuHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
+	id := r.PathValue("id")
 	if id == "" {
-		http.Error(w, "Missing id parameter", http.StatusBadRequest)
+		http.Error(w, "Missing id parameter in route", http.StatusBadRequest)
 		return
 	}
 
@@ -88,13 +94,12 @@ func (h *MenuHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
-	// Path example: /menu/52d6976b-41c3-4dec-8b04-dba3fd1cf566/image
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Pattern: /menu/{id}/image
+	itemID := r.PathValue("id")
+	if itemID == "" {
+		http.Error(w, "Missing menu item id", http.StatusBadRequest)
 		return
 	}
-	itemID := parts[2]
 
 	// 1. Limit upload size to 5MB
 	r.Body = http.MaxBytesReader(w, r.Body, 5<<20)

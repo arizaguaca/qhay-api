@@ -1,4 +1,4 @@
-package usecase
+package restaurant
 
 import (
 	"context"
@@ -57,6 +57,22 @@ func (u *restaurantUsecase) GetByOwnerID(ctx context.Context, ownerID string) ([
 func (u *restaurantUsecase) Update(ctx context.Context, restaurant *domain.Restaurant) error {
 	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
 	defer cancel()
+
+	existing, err := u.restaurantRepo.GetByID(ctx, restaurant.ID)
+	if err != nil {
+		return err
+	}
+
+	// Evitar que se modifique el OwnerID
+	restaurant.OwnerID = existing.OwnerID
+	
+	// Mantener el CreatedAt original
+	restaurant.CreatedAt = existing.CreatedAt
+
+	// Si el LogoURL viene vacío en el body, mantenemos el que ya tenía
+	if restaurant.LogoURL == "" {
+		restaurant.LogoURL = existing.LogoURL
+	}
 
 	restaurant.UpdatedAt = time.Now()
 	return u.restaurantRepo.Update(ctx, restaurant)

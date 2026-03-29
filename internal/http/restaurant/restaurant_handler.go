@@ -1,4 +1,4 @@
-package http
+package restaurant
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+
 
 	"github.com/arizaguaca/qhay-api/internal/domain"
 )
@@ -17,6 +17,8 @@ type RestaurantHandler struct {
 	QRCodeUsecase        domain.QRCodeUsecase
 	MenuUsecase          domain.MenuUsecase
 	OperatingHourUsecase domain.OperatingHourUsecase
+	ReservationUsecase   domain.ReservationUsecase
+	StaffUsecase         domain.StaffUsecase
 }
 
 func NewRestaurantHandler(
@@ -24,12 +26,16 @@ func NewRestaurantHandler(
 	q domain.QRCodeUsecase,
 	m domain.MenuUsecase,
 	oh domain.OperatingHourUsecase,
+	rv domain.ReservationUsecase,
+	staff domain.StaffUsecase,
 ) *RestaurantHandler {
 	return &RestaurantHandler{
 		Usecase:              u,
 		QRCodeUsecase:        q,
 		MenuUsecase:          m,
 		OperatingHourUsecase: oh,
+		ReservationUsecase:   rv,
+		StaffUsecase:         staff,
 	}
 }
 
@@ -61,10 +67,27 @@ func (h *RestaurantHandler) Fetch(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(restaurants)
 }
 
+func (h *RestaurantHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
+		return
+	}
+
+	restaurant, err := h.Usecase.GetByID(r.Context(), restaurantID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(restaurant)
+}
+
 func (h *RestaurantHandler) GetByOwner(w http.ResponseWriter, r *http.Request) {
-	ownerID := r.URL.Query().Get("owner_id")
+	ownerID := r.PathValue("ownerID")
 	if ownerID == "" {
-		http.Error(w, "Missing owner_id parameter", http.StatusBadRequest)
+		http.Error(w, "Missing ownerID", http.StatusBadRequest)
 		return
 	}
 
@@ -79,13 +102,12 @@ func (h *RestaurantHandler) GetByOwner(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestaurantHandler) GetQRs(w http.ResponseWriter, r *http.Request) {
-	// Path example: /restaurants/52d6976b-41c3-4dec-8b04-dba3fd1cf566/qrs
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Pattern: /restaurants/{id}/qrs
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
 		return
 	}
-	restaurantID := parts[2]
 
 	qrCodes, err := h.QRCodeUsecase.GetByRestaurantID(r.Context(), restaurantID)
 	if err != nil {
@@ -98,12 +120,12 @@ func (h *RestaurantHandler) GetQRs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestaurantHandler) GetMenu(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Pattern: /restaurants/{id}/menu
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
 		return
 	}
-	restaurantID := parts[2]
 
 	menuItems, err := h.MenuUsecase.FetchByRestaurantID(r.Context(), restaurantID)
 	if err != nil {
@@ -116,12 +138,12 @@ func (h *RestaurantHandler) GetMenu(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestaurantHandler) GetHours(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Pattern: /restaurants/{id}/hours
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
 		return
 	}
-	restaurantID := parts[2]
 
 	hours, err := h.OperatingHourUsecase.GetByRestaurantID(r.Context(), restaurantID)
 	if err != nil {
@@ -134,12 +156,12 @@ func (h *RestaurantHandler) GetHours(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestaurantHandler) SaveHours(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Pattern: /restaurants/{id}/hours
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
 		return
 	}
-	restaurantID := parts[2]
 
 	var hours []*domain.OperatingHour
 	if err := json.NewDecoder(r.Body).Decode(&hours); err != nil {
@@ -156,13 +178,31 @@ func (h *RestaurantHandler) SaveHours(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Operating hours saved successfully"})
 }
 
-func (h *RestaurantHandler) Update(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+func (h *RestaurantHandler) GetReservations(w http.ResponseWriter, r *http.Request) {
+	// Pattern: /restaurants/{id}/reservations
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
 		return
 	}
-	restaurantID := parts[2]
+
+	reservations, err := h.ReservationUsecase.FetchByRestaurantID(r.Context(), restaurantID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(reservations)
+}
+
+func (h *RestaurantHandler) Update(w http.ResponseWriter, r *http.Request) {
+	// Pattern: /restaurants/{id}
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
+		return
+	}
 
 	var restaurant domain.Restaurant
 	if err := json.NewDecoder(r.Body).Decode(&restaurant); err != nil {
@@ -181,12 +221,14 @@ func (h *RestaurantHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RestaurantHandler) UploadLogo(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 3 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
+	// Pattern: /restaurants/{id}/logo
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
 		return
 	}
-	restaurantID := parts[2]
+
+
 
 	// 1. Limit upload size to 5MB
 	r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
@@ -246,4 +288,84 @@ func (h *RestaurantHandler) UploadLogo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"logo_url": logoURL,
 	})
+}
+
+func (h *RestaurantHandler) AddStaff(w http.ResponseWriter, r *http.Request) {
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
+		return
+	}
+
+	var staff domain.Staff
+	if err := json.NewDecoder(r.Body).Decode(&staff); err != nil {
+		http.Error(w, "Malformed JSON", http.StatusBadRequest)
+		return
+	}
+
+	staff.RestaurantID = restaurantID
+	if err := h.StaffUsecase.Create(r.Context(), &staff); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(staff)
+}
+
+func (h *RestaurantHandler) GetStaff(w http.ResponseWriter, r *http.Request) {
+	restaurantID := r.PathValue("id")
+	if restaurantID == "" {
+		http.Error(w, "Missing restaurant id", http.StatusBadRequest)
+		return
+	}
+
+	staffList, err := h.StaffUsecase.GetByRestaurantID(r.Context(), restaurantID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(staffList)
+}
+
+func (h *RestaurantHandler) UpdateStaff(w http.ResponseWriter, r *http.Request) {
+	staffID := r.PathValue("staffId")
+	if staffID == "" {
+		http.Error(w, "Missing staff id", http.StatusBadRequest)
+		return
+	}
+
+	var staff domain.Staff
+	if err := json.NewDecoder(r.Body).Decode(&staff); err != nil {
+		http.Error(w, "Malformed JSON", http.StatusBadRequest)
+		return
+	}
+
+	staff.ID = staffID
+	// We don't overwrite RestaurantID here, usecase preserves it.
+	if err := h.StaffUsecase.Update(r.Context(), &staff); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(staff)
+}
+
+func (h *RestaurantHandler) DeleteStaff(w http.ResponseWriter, r *http.Request) {
+	staffID := r.PathValue("staffId")
+	if staffID == "" {
+		http.Error(w, "Missing staff id", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.StaffUsecase.Delete(r.Context(), staffID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
