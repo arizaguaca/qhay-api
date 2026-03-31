@@ -16,9 +16,6 @@ func TestUserUsecase_Create(t *testing.T) {
 	timeout := 10 * time.Second
 	u := user.NewUserUsecase(mockRepo, timeout)
 
-
-
-
 	user := &domain.User{
 		Name:  "Test User",
 		Email: "test@example.com",
@@ -37,7 +34,6 @@ func TestUserUsecase_GetByID(t *testing.T) {
 	mockRepo := new(user.UserRepository)
 	timeout := 10 * time.Second
 	u := user.NewUserUsecase(mockRepo, timeout)
-
 
 	userID := "123"
 	expectedUser := &domain.User{
@@ -60,7 +56,6 @@ func TestUserUsecase_Login_Success(t *testing.T) {
 	timeout := 10 * time.Second
 	u := user.NewUserUsecase(mockRepo, timeout)
 
-
 	email := "test@example.com"
 	password := "hashed_password"
 	expectedUser := &domain.User{
@@ -82,7 +77,6 @@ func TestUserUsecase_Login_InvalidCredentials(t *testing.T) {
 	mockRepo := new(user.UserRepository)
 	timeout := 10 * time.Second
 	u := user.NewUserUsecase(mockRepo, timeout)
-
 
 	email := "test@example.com"
 	password := "wrong_password"

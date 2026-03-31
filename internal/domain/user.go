@@ -11,15 +11,16 @@ var (
 )
 
 type User struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	Email      string    `json:"email"`
-	Phone      string    `json:"phone"`
-	Password   string    `json:"password"`
-	Role       string    `json:"role"`
-	IsVerified bool      `json:"is_verified"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	Phone        string    `json:"phone"`
+	Password     string    `json:"password"`
+	Role         string    `json:"role"`
+	RestaurantID string    `json:"restaurant_id,omitempty"`
+	IsVerified   bool      `json:"is_verified"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type UserRepository interface {
@@ -27,6 +28,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByPhone(ctx context.Context, phone string) (*User, error)
+	GetStaffByRestaurant(ctx context.Context, restaurantID string) ([]*User, error)
 	Fetch(ctx context.Context) ([]*User, error)
 	Update(ctx context.Context, user *User) error
 	Delete(ctx context.Context, id string) error
@@ -38,6 +40,7 @@ type UserUsecase interface {
 	GetByID(ctx context.Context, id string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByPhone(ctx context.Context, phone string) (*User, error)
+	GetStaffByRestaurant(ctx context.Context, restaurantID string) ([]*User, error)
 	Fetch(ctx context.Context) ([]*User, error)
 	Update(ctx context.Context, user *User) error
 	Delete(ctx context.Context, id string) error

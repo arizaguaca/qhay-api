@@ -7,23 +7,7 @@ import (
 
 	"github.com/arizaguaca/qhay-api/internal/config"
 	"github.com/arizaguaca/qhay-api/internal/domain"
-
-	"github.com/arizaguaca/qhay-api/internal/infrastructure"
-	"github.com/arizaguaca/qhay-api/internal/infrastructure/mysql"
-	"github.com/arizaguaca/qhay-api/internal/repository"
-
-	// Usecases
-	menuUC "github.com/arizaguaca/qhay-api/internal/usecase/menu"
-	hourUC "github.com/arizaguaca/qhay-api/internal/usecase/operating_hour"
-	orderUC "github.com/arizaguaca/qhay-api/internal/usecase/order"
-	qrUC "github.com/arizaguaca/qhay-api/internal/usecase/qrcode"
-	resvUC "github.com/arizaguaca/qhay-api/internal/usecase/reservation"
-	restUC "github.com/arizaguaca/qhay-api/internal/usecase/restaurant"
-	staffUC "github.com/arizaguaca/qhay-api/internal/usecase/staff"
-	userUC "github.com/arizaguaca/qhay-api/internal/usecase/user"
-	verifyUC "github.com/arizaguaca/qhay-api/internal/usecase/verification"
-
-	// Handlers
+	apiHttp "github.com/arizaguaca/qhay-api/internal/http"
 	menuH "github.com/arizaguaca/qhay-api/internal/http/menu"
 	orderH "github.com/arizaguaca/qhay-api/internal/http/order"
 	qrH "github.com/arizaguaca/qhay-api/internal/http/qrcode"
@@ -31,8 +15,17 @@ import (
 	restH "github.com/arizaguaca/qhay-api/internal/http/restaurant"
 	userH "github.com/arizaguaca/qhay-api/internal/http/user"
 	verifyH "github.com/arizaguaca/qhay-api/internal/http/verification"
-
-	apiHttp "github.com/arizaguaca/qhay-api/internal/http"
+	"github.com/arizaguaca/qhay-api/internal/infrastructure"
+	"github.com/arizaguaca/qhay-api/internal/infrastructure/mysql"
+	"github.com/arizaguaca/qhay-api/internal/repository"
+	menuUC "github.com/arizaguaca/qhay-api/internal/usecase/menu"
+	hourUC "github.com/arizaguaca/qhay-api/internal/usecase/operating_hour"
+	orderUC "github.com/arizaguaca/qhay-api/internal/usecase/order"
+	qrUC "github.com/arizaguaca/qhay-api/internal/usecase/qrcode"
+	resvUC "github.com/arizaguaca/qhay-api/internal/usecase/reservation"
+	restUC "github.com/arizaguaca/qhay-api/internal/usecase/restaurant"
+	userUC "github.com/arizaguaca/qhay-api/internal/usecase/user"
+	verifyUC "github.com/arizaguaca/qhay-api/internal/usecase/verification"
 )
 
 func main() {
@@ -53,7 +46,6 @@ func main() {
 	reservationRepo := repository.NewReservationRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
 	customerRepo := repository.NewCustomerRepository(db)
-	staffRepo := repository.NewStaffRepository(db)
 
 	// 2. Setup Usecases
 	timeoutContext := time.Duration(10) * time.Second
@@ -76,11 +68,11 @@ func main() {
 	verificationUsecase := verifyUC.NewVerificationUsecase(verificationRepo, customerRepo, smsService, timeoutContext)
 	reservationUsecase := resvUC.NewReservationUsecase(reservationRepo, timeoutContext)
 	orderUsecase := orderUC.NewOrderUsecase(orderRepo, timeoutContext)
-	staffUsecase := staffUC.NewStaffUsecase(staffRepo, timeoutContext)
+	// staffUsecase := staffUC.NewStaffUsecase(staffRepo, timeoutContext)
 
 	// 3. Setup Handlers
 	userHandler := userH.NewUserHandler(userUsecase)
-	restaurantHandler := restH.NewRestaurantHandler(restaurantUsecase, qrCodeUsecase, menuUsecase, operatingHourUsecase, reservationUsecase, staffUsecase)
+	restaurantHandler := restH.NewRestaurantHandler(restaurantUsecase, qrCodeUsecase, menuUsecase, operatingHourUsecase, reservationUsecase, nil)
 
 	menuHandler := menuH.NewMenuHandler(menuUsecase)
 	qrCodeHandler := qrH.NewQRCodeHandler(qrCodeUsecase)

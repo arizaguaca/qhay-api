@@ -70,6 +70,13 @@ func (u *userUsecase) GetByPhone(ctx context.Context, phone string) (*domain.Use
 	return u.userRepo.GetByPhone(ctx, phone)
 }
 
+func (u *userUsecase) GetStaffByRestaurant(ctx context.Context, restaurantID string) ([]*domain.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	return u.userRepo.GetStaffByRestaurant(ctx, restaurantID)
+}
+
 func (u *userUsecase) Fetch(ctx context.Context) ([]*domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
 	defer cancel()

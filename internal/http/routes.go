@@ -118,7 +118,7 @@ func NewRouter(handlers Handlers) http.Handler {
 		api.PUT("/restaurants/{id}/hours", handlers.RestaurantHandler.SaveHours)
 		api.POST("/restaurants/{id}/logo", handlers.RestaurantHandler.UploadLogo)
 		api.GET("/restaurants/{id}/reservations", handlers.RestaurantHandler.GetReservations)
-		
+
 		api.POST("/restaurants/{id}/staff", handlers.RestaurantHandler.AddStaff)
 		api.GET("/restaurants/{id}/staff", handlers.RestaurantHandler.GetStaff)
 		api.PUT("/restaurants/{id}/staff/{staffId}", handlers.RestaurantHandler.UpdateStaff)

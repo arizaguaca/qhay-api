@@ -81,7 +81,7 @@ func (_m *UserUsecase) Fetch(ctx context.Context) ([]*domain.User, error) {
 }
 
 // FetchByRestaurantID provides a mock function with given fields: ctx, restaurantID
-func (_m *UserUsecase) FetchByRestaurantID(ctx context.Context, restaurantID string) ([]*domain.User, error) {
+func (_m *UserUsecase) GetStaffByRestaurant(ctx context.Context, restaurantID string) ([]*domain.User, error) {
 	ret := _m.Called(ctx, restaurantID)
 
 	if len(ret) == 0 {

@@ -21,29 +21,56 @@ func NewUserRepository(db *gorm.DB) domain.UserRepository {
 
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	model := mysql.UserModel{
-		ID:         user.ID,
-		Name:       user.Name,
-		Email:      user.Email,
-		Phone:      user.Phone,
-		Password:   user.Password,
-		Role:       user.Role,
-		IsVerified: user.IsVerified,
+		ID:           user.ID,
+		Name:         user.Name,
+		Email:        user.Email,
+		Phone:        user.Phone,
+		Password:     user.Password,
+		Role:         user.Role,
+		RestaurantID: user.RestaurantID,
+		IsVerified:   user.IsVerified,
 	}
 
 	return r.db.WithContext(ctx).Create(&model).Error
 }
 
-func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
-	model := mysql.UserModel{
-		ID:         user.ID,
-		Name:       user.Name,
-		Email:      user.Email,
-		Phone:      user.Phone,
-		Password:   user.Password,
-		Role:       user.Role,
-		IsVerified: user.IsVerified,
+func (r *userRepository) GetStaffByRestaurant(ctx context.Context, restaurantID string) ([]*domain.User, error) {
+	var models []mysql.UserModel
+	if err := r.db.WithContext(ctx).Where("restaurant_id = ?", restaurantID).Find(&models).Error; err != nil {
+		return nil, err
 	}
 
+	users := make([]*domain.User, 0, len(models))
+	for _, m := range models {
+		users = append(users, &domain.User{
+			ID:           m.ID,
+			Name:         m.Name,
+			Email:        m.Email,
+			Phone:        m.Phone,
+			Password:     m.Password,
+			Role:         m.Role,
+			RestaurantID: m.RestaurantID,
+			IsVerified:   m.IsVerified,
+			CreatedAt:    time.UnixMilli(m.CreatedAt),
+			UpdatedAt:    time.UnixMilli(m.UpdatedAt),
+		})
+	}
+	return users, nil
+}
+
+func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
+	model := mysql.UserModel{
+		ID:           user.ID,
+		Name:         user.Name,
+		Email:        user.Email,
+		Phone:        user.Phone,
+		Password:     user.Password,
+		Role:         user.Role,
+		RestaurantID: user.RestaurantID,
+		IsVerified:   user.IsVerified,
+		CreatedAt:    user.CreatedAt.UnixMilli(),
+		UpdatedAt:    user.UpdatedAt.UnixMilli(),
+	}
 	return r.db.WithContext(ctx).Save(&model).Error
 }
 

@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 
-
 	"github.com/arizaguaca/qhay-api/internal/domain"
 )
 
@@ -18,7 +17,7 @@ type RestaurantHandler struct {
 	MenuUsecase          domain.MenuUsecase
 	OperatingHourUsecase domain.OperatingHourUsecase
 	ReservationUsecase   domain.ReservationUsecase
-	StaffUsecase         domain.StaffUsecase
+	UserUsecase          domain.UserUsecase
 }
 
 func NewRestaurantHandler(
@@ -27,7 +26,7 @@ func NewRestaurantHandler(
 	m domain.MenuUsecase,
 	oh domain.OperatingHourUsecase,
 	rv domain.ReservationUsecase,
-	staff domain.StaffUsecase,
+	userUsecase domain.UserUsecase,
 ) *RestaurantHandler {
 	return &RestaurantHandler{
 		Usecase:              u,
@@ -35,7 +34,7 @@ func NewRestaurantHandler(
 		MenuUsecase:          m,
 		OperatingHourUsecase: oh,
 		ReservationUsecase:   rv,
-		StaffUsecase:         staff,
+		UserUsecase:          userUsecase,
 	}
 }
 
@@ -228,8 +227,6 @@ func (h *RestaurantHandler) UploadLogo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-
 	// 1. Limit upload size to 5MB
 	r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
 	if err := r.ParseMultipartForm(5 << 20); err != nil {
@@ -297,21 +294,21 @@ func (h *RestaurantHandler) AddStaff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var staff domain.Staff
-	if err := json.NewDecoder(r.Body).Decode(&staff); err != nil {
+	var user domain.User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, "Malformed JSON", http.StatusBadRequest)
 		return
 	}
 
-	staff.RestaurantID = restaurantID
-	if err := h.StaffUsecase.Create(r.Context(), &staff); err != nil {
+	user.RestaurantID = restaurantID
+	if err := h.UserUsecase.Create(r.Context(), &user); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(staff)
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *RestaurantHandler) GetStaff(w http.ResponseWriter, r *http.Request) {
@@ -321,7 +318,7 @@ func (h *RestaurantHandler) GetStaff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	staffList, err := h.StaffUsecase.GetByRestaurantID(r.Context(), restaurantID)
+	staffList, err := h.UserUsecase.GetStaffByRestaurant(r.Context(), restaurantID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -338,21 +335,21 @@ func (h *RestaurantHandler) UpdateStaff(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var staff domain.Staff
-	if err := json.NewDecoder(r.Body).Decode(&staff); err != nil {
+	var user domain.User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, "Malformed JSON", http.StatusBadRequest)
 		return
 	}
 
-	staff.ID = staffID
+	user.ID = staffID
 	// We don't overwrite RestaurantID here, usecase preserves it.
-	if err := h.StaffUsecase.Update(r.Context(), &staff); err != nil {
+	if err := h.UserUsecase.Update(r.Context(), &user); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(staff)
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *RestaurantHandler) DeleteStaff(w http.ResponseWriter, r *http.Request) {
@@ -362,10 +359,11 @@ func (h *RestaurantHandler) DeleteStaff(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := h.StaffUsecase.Delete(r.Context(), staffID); err != nil {
+	if err := h.UserUsecase.Delete(r.Context(), staffID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
+

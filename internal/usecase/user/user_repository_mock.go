@@ -80,12 +80,12 @@ func (_m *UserRepository) Fetch(ctx context.Context) ([]*domain.User, error) {
 	return r0, r1
 }
 
-// FetchByRestaurantID provides a mock function with given fields: ctx, restaurantID
-func (_m *UserRepository) FetchByRestaurantID(ctx context.Context, restaurantID string) ([]*domain.User, error) {
+// GetStaffByRestaurant provides a mock function with given fields: ctx, restaurantID
+func (_m *UserRepository) GetStaffByRestaurant(ctx context.Context, restaurantID string) ([]*domain.User, error) {
 	ret := _m.Called(ctx, restaurantID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for FetchByRestaurantID")
+		panic("no return value specified for GetStaffByRestaurant")
 	}
 
 	var r0 []*domain.User
