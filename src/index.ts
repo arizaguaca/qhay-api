@@ -1,0 +1,135 @@
+import express from 'express';
+import cors from 'cors';
+import { loadConfig } from './config/config';
+import { MySQLConnection } from './infrastructure/database/mysql-connection';
+import { MySQLRestaurantRepository } from './infrastructure/database/mysql-restaurant-repository';
+import { MySQLUserRepository } from './infrastructure/database/mysql-user-repository';
+import { MySQLCustomerRepository } from './infrastructure/database/mysql-customer-repository';
+import { MySQLMenuRepository } from './infrastructure/database/mysql-menu-repository';
+import { MySQLOperatingHourRepository } from './infrastructure/database/mysql-operating-hour-repository';
+import { MySQLOrderRepository } from './infrastructure/database/mysql-order-repository';
+import { MySQLQRCodeRepository } from './infrastructure/database/mysql-qrcode-repository';
+import { MySQLReservationRepository } from './infrastructure/database/mysql-reservation-repository';
+import { MySQLVerificationRepository } from './infrastructure/database/mysql-verification-repository';
+import { RestaurantUseCaseImpl } from './application/use-cases/restaurant-use-case-impl';
+import { UserUseCaseImpl } from './application/use-cases/user-use-case-impl';
+import { CustomerUseCaseImpl } from './application/use-cases/customer-use-case-impl';
+import { MenuUseCaseImpl } from './application/use-cases/menu-use-case-impl';
+import { OperatingHourUseCaseImpl } from './application/use-cases/operating-hour-use-case-impl';
+import { OrderUseCaseImpl } from './application/use-cases/order-use-case-impl';
+import { QRCodeUseCaseImpl } from './application/use-cases/qrcode-use-case-impl';
+import { ReservationUseCaseImpl } from './application/use-cases/reservation-use-case-impl';
+import { VerificationUseCaseImpl } from './application/use-cases/verification-use-case-impl';
+import { RestaurantController } from './infrastructure/web/controllers/restaurant-controller';
+import { UserController } from './infrastructure/web/controllers/user-controller';
+import { CustomerController } from './infrastructure/web/controllers/customer-controller';
+import { MenuController } from './infrastructure/web/controllers/menu-controller';
+import { OperatingHourController } from './infrastructure/web/controllers/operating-hour-controller';
+import { OrderController } from './infrastructure/web/controllers/order-controller';
+import { QRCodeController } from './infrastructure/web/controllers/qrcode-controller';
+import { ReservationController } from './infrastructure/web/controllers/reservation-controller';
+import { VerificationController } from './infrastructure/web/controllers/verification-controller';
+import { createRestaurantRoutes } from './infrastructure/web/routes/restaurant-routes';
+import { createUserRoutes } from './infrastructure/web/routes/user-routes';
+import { createCustomerRoutes } from './infrastructure/web/routes/customer-routes';
+import { createMenuRoutes } from './infrastructure/web/routes/menu-routes';
+import { createOperatingHourRoutes } from './infrastructure/web/routes/operating-hour-routes';
+import { createOrderRoutes } from './infrastructure/web/routes/order-routes';
+import { createQRCodeRoutes } from './infrastructure/web/routes/qrcode-routes';
+import { createReservationRoutes } from './infrastructure/web/routes/reservation-routes';
+import { createVerificationRoutes } from './infrastructure/web/routes/verification-routes';
+import { ConsoleSMSService } from './infrastructure/sms-service';
+
+async function main() {
+  const config = loadConfig();
+  console.log(`Starting API in environment: [${config.appEnv}]`);
+
+  // Setup Database
+  const db = new MySQLConnection();
+  await db.connect({
+    host: config.dbHost,
+    user: config.dbUser,
+    password: config.dbPass,
+    database: config.dbName,
+    port: config.dbPort,
+  });
+
+  // Setup Repositories
+  const restaurantRepo = new MySQLRestaurantRepository(db);
+  const userRepo = new MySQLUserRepository(db);
+  const customerRepo = new MySQLCustomerRepository(db);
+  const menuRepo = new MySQLMenuRepository(db);
+  const operatingHourRepo = new MySQLOperatingHourRepository(db);
+  const orderRepo = new MySQLOrderRepository(db);
+  const qrCodeRepo = new MySQLQRCodeRepository(db);
+  const reservationRepo = new MySQLReservationRepository(db);
+  const verificationRepo = new MySQLVerificationRepository(db);
+
+  // Setup Infrastructure
+  const smsService = new ConsoleSMSService();
+
+  // Setup Use Cases
+  const restaurantUseCase = new RestaurantUseCaseImpl(restaurantRepo);
+  const userUseCase = new UserUseCaseImpl(userRepo);
+  const customerUseCase = new CustomerUseCaseImpl(customerRepo);
+  const menuUseCase = new MenuUseCaseImpl(menuRepo);
+  const operatingHourUseCase = new OperatingHourUseCaseImpl(operatingHourRepo);
+  const orderUseCase = new OrderUseCaseImpl(orderRepo);
+  const qrCodeUseCase = new QRCodeUseCaseImpl(qrCodeRepo);
+  const reservationUseCase = new ReservationUseCaseImpl(reservationRepo);
+  const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, customerRepo, smsService);
+
+  // Setup Controllers
+  const restaurantController = new RestaurantController(restaurantUseCase);
+  const userController = new UserController(userUseCase);
+  const customerController = new CustomerController(customerUseCase);
+  const menuController = new MenuController(menuUseCase);
+  const operatingHourController = new OperatingHourController(operatingHourUseCase);
+  const orderController = new OrderController(orderUseCase);
+  const qrCodeController = new QRCodeController(qrCodeUseCase);
+  const reservationController = new ReservationController(reservationUseCase);
+  const verificationController = new VerificationController(verificationUseCase);
+
+  // Setup Routes
+  const app = express();
+  app.use(cors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  }));
+  app.use(express.json());
+
+  const apiPrefix = '/api/v1';
+  app.use(`${apiPrefix}/restaurants`, createRestaurantRoutes(restaurantController));
+  app.use(`${apiPrefix}/users`, createUserRoutes(userController));
+  // legacy auth path from Go version
+  app.post(`${apiPrefix}/auth/login`, userController.login.bind(userController));
+
+  // direct user owner -> restaurants bridge route (compatibilidad con frontend /api/v1/users/:id/restaurants)
+  app.get(`${apiPrefix}/users/:id/restaurants`, async (req, res) => {
+    try {
+      const ownerId = req.params.id;
+      const restaurants = await restaurantUseCase.getByOwnerId(ownerId);
+      res.json(restaurants);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.use(`${apiPrefix}/customers`, createCustomerRoutes(customerController));
+  app.use(`${apiPrefix}/menus`, createMenuRoutes(menuController));
+  app.use(`${apiPrefix}/operating-hours`, createOperatingHourRoutes(operatingHourController));
+  app.use(`${apiPrefix}/orders`, createOrderRoutes(orderController));
+  app.use(`${apiPrefix}/qrcodes`, createQRCodeRoutes(qrCodeController));
+  app.use(`${apiPrefix}/reservations`, createReservationRoutes(reservationController));
+  app.use(`${apiPrefix}/verification`, createVerificationRoutes(verificationController));
+
+  // Start Server
+  const port = process.env.PORT || 8080;
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+main().catch(console.error);

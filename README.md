@@ -1,52 +1,77 @@
-# Table Backend - Clean Architecture
+# QHay API - Clean Architecture
 
-Este es el backend para el proyecto "table", implementado siguiendo los principios de **Clean Architecture** en Go.
+This is the backend for the QHay restaurant management system, implemented following the **Clean Architecture** principles in Node.js with TypeScript.
 
-## Configuración de Base de Datos (MySQL)
+## Database Setup (MySQL)
 
-El backend ahora requiere una base de datos MySQL. Puedes configurar la conexión mediante variables de entorno (o usar los valores por defecto):
+The backend requires a MySQL database. Configure the connection via environment variables (or use default values):
 
-- `DB_USER`: Usuario (defecto: `root`)
-- `DB_PASS`: Contraseña (defecto: ``)
-- `DB_HOST`: Host (defecto: `localhost`)
-- `DB_PORT`: Puerto (defecto: `3306`)
-- `DB_NAME`: Nombre de la base de datos (defecto: `table_db`)
+- `DB_USER`: User (default: `root`)
+- `DB_PASS`: Password (default: ``)
+- `DB_HOST`: Host (default: `localhost`)
+- `DB_PORT`: Port (default: `3306`)
+- `DB_NAME`: Database name (default: `table_db`)
 
-### Inicialización de la DB
+### Initialize DB
 
-Ejecuta el script `database.sql` en tu servidor MySQL para crear la tabla necesaria:
+Execute the `database.sql` script in your MySQL server to create the necessary tables:
 
 ```sql
 CREATE DATABASE table_db;
 USE table_db;
--- Ejecutar contenido de database.sql
+-- Execute contents of database.sql
 ```
 
-## Estructura del Proyecto
+## Project Structure
 
-- `cmd/api/`: Punto de entrada de la aplicación. Aquí se realiza la inyección de dependencias.
-- `internal/domain/`: Contiene las entidades de negocio y las interfaces (contratos) para repositorios y casos de uso. Esta capa no tiene dependencias externas.
-- `internal/usecase/`: Implementa la lógica de negocio. Depende únicamente de las interfaces del dominio.
-- `internal/repository/`: Implementaciones concretas de acceso a datos (ej. SQL, NoSQL, In-memory).
-- `internal/http/`: Capa de transporte. Maneja las peticiones HTTP y formatea las respuestas.
+- `src/config/`: Configuration loading from environment variables.
+- `src/domain/entities/`: Business entities and domain models.
+- `src/domain/repositories/`: Repository interfaces (contracts).
+- `src/application/use-cases/`: Application business logic (use cases).
+- `src/infrastructure/database/`: Database implementations (MySQL repositories).
+- `src/infrastructure/web/controllers/`: HTTP request handlers.
+- `src/infrastructure/web/routes/`: Route definitions.
+- `src/index.ts`: Application entry point with dependency injection.
 
-## Cómo ejecutar
+## How to Run
 
-1. Asegúrate de tener Go instalado.
-2. Ejecuta el servidor:
+1. Ensure Node.js and npm are installed.
+2. Install dependencies:
    ```bash
-   go run cmd/api/main.go
+   npm install
    ```
-3. El servidor estará disponible en `http://localhost:8080`.
+3. Build the project:
+   ```bash
+   npm run build
+   ```
+4. Start the server:
+   ```bash
+   npm start
+   ```
+   Or for development:
+   ```bash
+   npm run dev
+   ```
+5. The server will be available at `http://localhost:8080`.
 
 ## Endpoints
 
-- `POST /tables`: Crear una nueva tabla.
-- `GET /tables`: Listar todas las tablas.
+- `POST /restaurants`: Create a new restaurant.
+- `GET /restaurants`: List all restaurants.
+- `GET /restaurants/:id`: Get restaurant by ID.
+- `PUT /restaurants/:id`: Update restaurant.
+- `GET /restaurants/owner/:ownerId`: Get restaurants by owner.
 
-## Frontend (React + Vite)
+- `POST /users`: Create a new user.
+- `POST /users/login`: User login.
+- And more for users, customers, menus, orders, etc.
 
-Ubicado en la carpeta `frontend/`. Utiliza React con Vite, Framer Motion para animaciones y Lucide React para iconos.
+## Testing
+
+Run tests with:
+```bash
+npm test
+```
 
 ### Cómo ejecutar
 
