@@ -18,8 +18,12 @@ export class MySQLUserRepository implements UserRepository {
         user.role,
         user.restaurantId || null,
         user.isVerified,
-        user.createdAt.getTime(),
-        user.updatedAt.getTime(),
+        user.createdAt instanceof Date
+          ? user.createdAt.toISOString().slice(0, 19).replace('T', ' ')
+          : new Date(user.createdAt).toISOString().slice(0, 19).replace('T', ' '),
+        user.updatedAt instanceof Date
+          ? user.updatedAt.toISOString().slice(0, 19).replace('T', ' ')
+          : new Date(user.updatedAt).toISOString().slice(0, 19).replace('T', ' '),
       ]
     );
   }
@@ -126,7 +130,9 @@ export class MySQLUserRepository implements UserRepository {
         user.role,
         user.restaurantId || null,
         user.isVerified,
-        user.updatedAt.getTime(),
+        user.updatedAt instanceof Date
+          ? user.updatedAt.toISOString().slice(0, 19).replace('T', ' ')
+          : new Date(user.updatedAt).toISOString().slice(0, 19).replace('T', ' '),
         user.id,
       ]
     );
