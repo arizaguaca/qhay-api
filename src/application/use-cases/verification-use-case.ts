@@ -1,4 +1,6 @@
+import { Channel } from "../../domain/entities/verification-code";
+
 export interface VerificationUseCase {
-  sendCode(phone: string): Promise<void>;
-  verifyCode(phone: string, code: string): Promise<string>;
+  sendCode(contact: string, channel: Channel): Promise<void>;
+  verifyCode(contact: string, code: string): Promise<string>;
 }

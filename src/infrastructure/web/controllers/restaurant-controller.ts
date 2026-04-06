@@ -9,9 +9,9 @@ export class RestaurantController {
     try {
       const restaurant = req.body;
 
-      // Si se subió un logo, construye la ruta relativa para guardar en BD
-      if (req.file) {
-        const relativePath = path.join('uploads', 'logos', req.file.filename).replace(/\\/g, '/');
+      const file = (req as any).file;
+      if (file) {
+        const relativePath = path.join('uploads', 'logos', file.filename).replace(/\\/g, '/');
         restaurant.logoUrl = relativePath;
       } else {
         restaurant.logoUrl = restaurant.logoUrl ?? '';
@@ -63,11 +63,12 @@ export class RestaurantController {
       const restaurant = req.body;
       restaurant.id = id;
 
-      // Si se subió un logo durante la actualización
-      if (req.file) {
-        const relativePath = path.join('uploads', 'logos', req.file.filename).replace(/\\/g, '/');
+      const file = (req as any).file;
+      if (file) {
+        const relativePath = path.join('uploads', 'logos', file.filename).replace(/\\/g, '/');
         restaurant.logoUrl = relativePath;
       }
+
 
       await this.restaurantUseCase.update(restaurant);
       res.json({ message: 'Restaurant updated successfully' });

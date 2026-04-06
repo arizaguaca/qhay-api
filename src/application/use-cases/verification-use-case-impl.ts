@@ -1,54 +1,51 @@
 import { v4 as uuidv4 } from 'uuid';
-import { VerificationCode } from '../../domain/entities/verification-code';
+import { Channel, VerificationCode } from '../../domain/entities/verification-code';
 import { VerificationRepository } from '../../domain/repositories/verification-repository';
 import { SMSService } from '../../domain/repositories/sms-service';
 import { CustomerRepository } from '../../domain/repositories/customer-repository';
+import { VerificationUseCase } from './verification-use-case';
 
-export class VerificationUseCaseImpl {
+export class VerificationUseCaseImpl implements VerificationUseCase {
   constructor(
     private verifyRepo: VerificationRepository,
     private customerRepo: CustomerRepository,
     private smsService: SMSService
-  ) {}
+  ) { }
 
-  async sendCode(phone: string): Promise<void> {
+  async sendCode(contact: string, channel: Channel): Promise<void> {
+    const customer = await this.customerRepo.getByPhone(contact);
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+
     const code = this.generateRandomCode(6);
     const verification: VerificationCode = {
       id: uuidv4(),
-      phone,
+      entityId: customer.id,
+      contact,
+      channel,
       code,
+      verified: false,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     await this.verifyRepo.create(verification);
-    await this.smsService.sendSMS(phone, `Your verification code is: ${code}`);
+
+    if (channel === Channel.SMS) {
+      await this.smsService.sendSMS(contact, `Your verification code is: ${code}`);
+    }
   }
 
-  async verifyCode(phone: string, code: string): Promise<string> {
-    const verification = await this.verifyRepo.getLatestByPhone(phone);
+  async verifyCode(contact: string, code: string): Promise<string> {
+    const verification = await this.verifyRepo.getLatestByContact(contact);
     if (!verification || verification.code !== code || verification.expiresAt < new Date()) {
       throw new Error('Invalid or expired code');
     }
 
-    // Create customer if not exists
-    const existingCustomer = await this.customerRepo.getByPhone(phone);
-    if (!existingCustomer) {
-      const newCustomer = {
-        id: uuidv4(),
-        name: '',
-        phone,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      await this.customerRepo.create(newCustomer);
-      await this.verifyRepo.deleteByPhone(phone);
-      return newCustomer.id;
-    } else {
-      await this.verifyRepo.deleteByPhone(phone);
-      return existingCustomer.id;
-    }
+    await this.verifyRepo.deleteByContact(contact);
+    return verification.entityId;
   }
 
   private generateRandomCode(length: number): string {

@@ -1,7 +1,17 @@
+export enum Channel {
+  EMAIL = 'email',
+  WHATSAPP = 'whatsapp',
+  SMS = 'sms'
+}
+
 export interface VerificationCode {
   id: string;
-  phone: string;
+  entityId: string;
+  contact: string;
+  channel: Channel;
   code: string;
+  verified: boolean;
   expiresAt: Date;
   createdAt: Date;
+  updatedAt: Date;
 }

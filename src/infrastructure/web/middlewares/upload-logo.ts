@@ -3,16 +3,16 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
+  destination: (_req: any, _file: any, cb: any) => {
     cb(null, path.join(process.cwd(), 'uploads', 'logos'));
   },
-  filename: (_req, file, cb) => {
+  filename: (_req: any, file: any, cb: any) => {
     const ext = path.extname(file.originalname);
     cb(null, `${uuidv4()}${ext}`);
   },
 });
 
-const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: any, file: any, cb: any) => {
   const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
@@ -20,6 +20,7 @@ const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer
     cb(new Error('Only image files are allowed (jpeg, png, webp, svg)'));
   }
 };
+
 
 export const uploadLogo = multer({
   storage,
