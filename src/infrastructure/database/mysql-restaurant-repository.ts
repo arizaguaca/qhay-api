@@ -2,23 +2,32 @@ import { Restaurant } from '../../domain/entities/restaurant';
 import { RestaurantRepository } from '../../domain/repositories/restaurant-repository';
 import { MySQLConnection } from './mysql-connection';
 
+function toMySqlDateTime(value: Date): string {
+  const d = value instanceof Date ? value : new Date(value);
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 export class MySQLRestaurantRepository implements RestaurantRepository {
   constructor(private db: MySQLConnection) {}
 
   async create(restaurant: Restaurant): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO restaurants (id, name, description, address, phone, owner_id, logo_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO restaurants (id, name, description, address, phone, location_type, cuisine_type, mall_name, link, owner_id, logo_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         restaurant.id,
         restaurant.name,
         restaurant.description,
         restaurant.address,
         restaurant.phone,
+        restaurant.locationType,
+        restaurant.cuisineType,
+        restaurant.mallName ?? null,
+        restaurant.link ?? null,
         restaurant.ownerId,
         restaurant.logoUrl,
-        restaurant.createdAt.getTime(),
-        restaurant.updatedAt.getTime(),
+        toMySqlDateTime(restaurant.createdAt),
+        toMySqlDateTime(restaurant.updatedAt),
       ]
     );
   }
@@ -34,6 +43,10 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       description: row.description,
       address: row.address,
       phone: row.phone,
+      locationType: row.location_type ?? '',
+      cuisineType: row.cuisine_type ?? '',
+      mallName: row.mall_name ?? null,
+      link: row.link ?? null,
       ownerId: row.owner_id,
       logoUrl: row.logo_url,
       createdAt: new Date(row.created_at),
@@ -50,6 +63,10 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       description: row.description,
       address: row.address,
       phone: row.phone,
+      locationType: row.location_type ?? '',
+      cuisineType: row.cuisine_type ?? '',
+      mallName: row.mall_name ?? null,
+      link: row.link ?? null,
       ownerId: row.owner_id,
       logoUrl: row.logo_url,
       createdAt: new Date(row.created_at),
@@ -66,6 +83,9 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       description: row.description,
       address: row.address,
       phone: row.phone,
+      locationType: row.location_type ?? '',
+      cuisineType: row.cuisine_type ?? '',
+      link: row.link ?? null,
       ownerId: row.owner_id,
       logoUrl: row.logo_url,
       createdAt: new Date(row.created_at),
@@ -76,14 +96,18 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
   async update(restaurant: Restaurant): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'UPDATE restaurants SET name = ?, description = ?, address = ?, phone = ?, logo_url = ?, updated_at = ? WHERE id = ?',
+      'UPDATE restaurants SET name = ?, description = ?, address = ?, phone = ?, location_type = ?, cuisine_type = ?, mall_name = ?, link = ?, logo_url = ?, updated_at = ? WHERE id = ?',
       [
         restaurant.name,
         restaurant.description,
         restaurant.address,
         restaurant.phone,
+        restaurant.locationType,
+        restaurant.cuisineType,
+        restaurant.mallName ?? null,
+        restaurant.link ?? null,
         restaurant.logoUrl,
-        restaurant.updatedAt.getTime(),
+        toMySqlDateTime(restaurant.updatedAt),
         restaurant.id,
       ]
     );
