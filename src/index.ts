@@ -12,6 +12,7 @@ import { MySQLOrderRepository } from './infrastructure/database/mysql-order-repo
 import { MySQLQRCodeRepository } from './infrastructure/database/mysql-qrcode-repository';
 import { MySQLReservationRepository } from './infrastructure/database/mysql-reservation-repository';
 import { MySQLVerificationRepository } from './infrastructure/database/mysql-verification-repository';
+import { MySQLCategoryRepository } from './infrastructure/database/mysql-category-repository';
 import { RestaurantUseCaseImpl } from './application/use-cases/restaurant-use-case-impl';
 import { UserUseCaseImpl } from './application/use-cases/user-use-case-impl';
 import { CustomerUseCaseImpl } from './application/use-cases/customer-use-case-impl';
@@ -65,6 +66,7 @@ async function main() {
   const qrCodeRepo = new MySQLQRCodeRepository(db);
   const reservationRepo = new MySQLReservationRepository(db);
   const verificationRepo = new MySQLVerificationRepository(db);
+  const categoryRepo = new MySQLCategoryRepository(db);
 
   // Setup Infrastructure
   const smsService = new ConsoleSMSService();
@@ -73,7 +75,7 @@ async function main() {
   const restaurantUseCase = new RestaurantUseCaseImpl(restaurantRepo);
   const userUseCase = new UserUseCaseImpl(userRepo);
   const customerUseCase = new CustomerUseCaseImpl(customerRepo);
-  const menuUseCase = new MenuUseCaseImpl(menuRepo);
+  const menuUseCase = new MenuUseCaseImpl(menuRepo, categoryRepo);
   const operatingHourUseCase = new OperatingHourUseCaseImpl(operatingHourRepo);
   const orderUseCase = new OrderUseCaseImpl(orderRepo);
   const qrCodeUseCase = new QRCodeUseCaseImpl(qrCodeRepo);
