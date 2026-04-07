@@ -1,3 +1,4 @@
+import path from 'path';
 import { Request, Response } from 'express';
 import { MenuUseCaseImpl } from '../../../application/use-cases/menu-use-case-impl';
 
@@ -7,6 +8,17 @@ export class MenuController {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const item = req.body;
+
+      // Si los grupos vienen como string (caso multipart/form-data con imagen), los parseamos
+      if (item.groups && typeof item.groups === 'string') {
+        item.groups = JSON.parse(item.groups);
+      }
+
+      if (req.file) {
+        const relativePath = path.join('uploads', 'menu', req.file.filename).replace(/\\/g, '/');
+        item.imageUrl = relativePath;
+      }
+
       await this.menuUseCase.create(item);
       res.status(201).json({ message: 'Menu item created successfully' });
     } catch (error) {
@@ -41,6 +53,19 @@ export class MenuController {
   async update(req: Request, res: Response): Promise<void> {
     try {
       const item = req.body;
+      const { id } = req.params;
+      item.id = id;
+
+      // Si los grupos vienen como string, los parseamos
+      if (item.groups && typeof item.groups === 'string') {
+        item.groups = JSON.parse(item.groups);
+      }
+
+      if (req.file) {
+        const relativePath = path.join('uploads', 'menu', req.file.filename).replace(/\\/g, '/');
+        item.imageUrl = relativePath;
+      }
+
       await this.menuUseCase.update(item);
       res.json({ message: 'Menu item updated successfully' });
     } catch (error) {
@@ -53,6 +78,26 @@ export class MenuController {
       const { id } = req.params;
       await this.menuUseCase.delete(id);
       res.json({ message: 'Menu item deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  async createCategory(req: Request, res: Response): Promise<void> {
+    try {
+      const category = req.body;
+      const createdCategory = await this.menuUseCase.createCategory(category);
+      res.status(201).json(createdCategory);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  async fetchCategories(req: Request, res: Response): Promise<void> {
+    try {
+      const { restaurantId } = req.params;
+      const categories = await this.menuUseCase.fetchCategories(restaurantId);
+      res.json(categories);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
