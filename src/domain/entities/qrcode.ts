@@ -3,7 +3,7 @@ export interface QRCode {
   restaurantId: string;
   tableNumber: number;
   label: string;
-  code: string;
+  slugPath: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

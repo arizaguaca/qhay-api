@@ -6,8 +6,15 @@ export class QRCodeController {
 
   async generate(req: Request, res: Response): Promise<void> {
     try {
-      const { restaurantId, tableNumber } = req.body;
-      const qrCode = await this.qrCodeUseCase.generate(restaurantId, parseInt(tableNumber));
+      const { restaurantId, tableNumber, quantity, label } = req.body;
+
+      if (quantity) {
+        const qrCodes = await this.qrCodeUseCase.generateBulk(restaurantId, parseInt(quantity));
+        res.status(201).json(qrCodes);
+        return;
+      }
+
+      const qrCode = await this.qrCodeUseCase.generate(restaurantId, parseInt(tableNumber), label);
       res.status(201).json(qrCode);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
