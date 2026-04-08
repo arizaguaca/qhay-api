@@ -41,6 +41,8 @@ import { createQRCodeRoutes } from './infrastructure/web/routes/qrcode-routes';
 import { createReservationRoutes } from './infrastructure/web/routes/reservation-routes';
 import { createVerificationRoutes } from './infrastructure/web/routes/verification-routes';
 import { ConsoleSMSService } from './infrastructure/sms-service';
+import { SMSNotificationProvider } from './infrastructure/notifications/sms-notification-provider';
+import { EmailNotificationProvider } from './infrastructure/notifications/email-notification-provider';
 
 async function main() {
   const config = loadConfig();
@@ -70,6 +72,10 @@ async function main() {
 
   // Setup Infrastructure
   const smsService = new ConsoleSMSService();
+  const notificationProviders = [
+    new SMSNotificationProvider(smsService),
+    new EmailNotificationProvider(),
+  ];
 
   // Setup Use Cases
   const restaurantUseCase = new RestaurantUseCaseImpl(restaurantRepo);
@@ -80,7 +86,7 @@ async function main() {
   const orderUseCase = new OrderUseCaseImpl(orderRepo);
   const qrCodeUseCase = new QRCodeUseCaseImpl(qrCodeRepo);
   const reservationUseCase = new ReservationUseCaseImpl(reservationRepo);
-  const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, customerRepo, smsService);
+  const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, customerRepo, notificationProviders);
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);

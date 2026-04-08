@@ -1,4 +1,4 @@
-import { SMSService } from '../domain/repositories/sms-service';
+import { SMSService } from '../domain/services/sms-service';
 
 export class ConsoleSMSService implements SMSService {
   async sendSMS(contact: string, message: string): Promise<void> {

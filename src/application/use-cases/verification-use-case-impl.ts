@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Channel, VerificationCode } from '../../domain/entities/verification-code';
 import { VerificationRepository } from '../../domain/repositories/verification-repository';
-import { SMSService } from '../../domain/repositories/sms-service';
+import { NotificationProvider } from '../../domain/services/notification-provider';
 import { CustomerRepository } from '../../domain/repositories/customer-repository';
 import { VerificationUseCase } from './verification-use-case';
 
@@ -9,7 +9,7 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
   constructor(
     private verifyRepo: VerificationRepository,
     private customerRepo: CustomerRepository,
-    private smsService: SMSService
+    private providers: NotificationProvider[]
   ) { }
 
   async sendCode(contact: string, channel: Channel): Promise<void> {
@@ -33,9 +33,12 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
 
     await this.verifyRepo.create(verification);
 
-    if (channel === Channel.SMS) {
-      await this.smsService.sendSMS(contact, `Your verification code is: ${code}`);
+    const provider = this.providers.find(p => p.channel === channel);
+    if (!provider) {
+      throw new Error(`Channel ${channel} is not supported or misconfigured`);
     }
+
+    await provider.send(contact, `Your verification code is: ${code}`);
   }
 
   async verifyCode(contact: string, code: string): Promise<string> {
