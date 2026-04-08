@@ -14,8 +14,8 @@ export class MySQLCustomerRepository implements CustomerRepository {
         customer.name || null,
         customer.phone,
         customer.isActive,
-        customer.createdAt.getTime(),
-        customer.updatedAt.getTime(),
+        this.formatDate(customer.createdAt),
+        this.formatDate(customer.updatedAt),
       ]
     );
   }
@@ -58,9 +58,14 @@ export class MySQLCustomerRepository implements CustomerRepository {
         customer.name || null,
         customer.phone,
         customer.isActive,
-        customer.updatedAt.getTime(),
+        this.formatDate(customer.updatedAt),
         customer.id,
       ]
     );
+  }
+
+  private formatDate(date: Date): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   }
 }

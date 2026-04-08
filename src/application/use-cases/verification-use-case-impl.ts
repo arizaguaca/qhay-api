@@ -44,8 +44,19 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
       throw new Error('Invalid or expired code');
     }
 
-    await this.verifyRepo.deleteByContact(contact);
+    verification.verified = true;
+    verification.updatedAt = new Date();
+    await this.verifyRepo.update(verification);
+
+    const customer = await this.customerRepo.getByPhone(contact);
+    if (customer) {
+      customer.isActive = true;
+      customer.updatedAt = new Date();
+      await this.customerRepo.update(customer);
+    }
+
     return verification.entityId;
+
   }
 
   private generateRandomCode(length: number): string {
