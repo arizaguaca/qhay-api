@@ -8,16 +8,16 @@ export class MySQLQRCodeRepository implements QRCodeRepository {
   async create(qrCode: QRCode): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO qrcodes (id, restaurant_id, table_number, label, code, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO qrcodes (id, restaurant_id, table_number, label, slug_path, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         qrCode.id,
         qrCode.restaurantId,
         qrCode.tableNumber,
         qrCode.label,
-        qrCode.code,
-        qrCode.isActive,
-        qrCode.createdAt.getTime(),
-        qrCode.updatedAt.getTime(),
+        qrCode.slugPath,
+        qrCode.isActive ? 1 : 0,
+        qrCode.createdAt.toISOString().slice(0, 19).replace('T', ' '),
+        qrCode.updatedAt.toISOString().slice(0, 19).replace('T', ' '),
       ]
     );
   }
@@ -32,7 +32,7 @@ export class MySQLQRCodeRepository implements QRCodeRepository {
       restaurantId: row.restaurant_id,
       tableNumber: row.table_number,
       label: row.label,
-      code: row.code,
+      slugPath: row.slug_path,
       isActive: row.is_active === 1,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -47,7 +47,7 @@ export class MySQLQRCodeRepository implements QRCodeRepository {
       restaurantId: row.restaurant_id,
       tableNumber: row.table_number,
       label: row.label,
-      code: row.code,
+      slugPath: row.slug_path,
       isActive: row.is_active === 1,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -64,7 +64,7 @@ export class MySQLQRCodeRepository implements QRCodeRepository {
       restaurantId: row.restaurant_id,
       tableNumber: row.table_number,
       label: row.label,
-      code: row.code,
+      slugPath: row.slug_path,
       isActive: row.is_active === 1,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),

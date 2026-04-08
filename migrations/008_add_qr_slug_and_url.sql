@@ -1,0 +1,3 @@
+ALTER TABLE qrcodes 
+  ADD COLUMN slug_path VARCHAR(255) UNIQUE NOT NULL AFTER code,
+  DROP COLUMN code;
