@@ -1,27 +1,26 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Channel, VerificationCode } from '../../domain/entities/verification-code';
 import { VerificationRepository } from '../../domain/repositories/verification-repository';
-import { NotificationProvider } from '../../domain/services/notification-provider';
-import { CustomerRepository } from '../../domain/repositories/customer-repository';
+import { NotificationProvider } from '../../domain/notifications/notification-provider';
 import { VerificationUseCase } from './verification-use-case';
+
+import { VerificationEntityStrategy } from '../../domain/strategies/verification-entity-strategy';
 
 export class VerificationUseCaseImpl implements VerificationUseCase {
   constructor(
     private verifyRepo: VerificationRepository,
-    private customerRepo: CustomerRepository,
-    private providers: NotificationProvider[]
+    private providers: NotificationProvider[],
+    private entityStrategies: VerificationEntityStrategy[]
   ) { }
 
   async sendCode(contact: string, channel: Channel): Promise<void> {
-    const customer = await this.customerRepo.getByPhone(contact);
-    if (!customer) {
-      throw new Error('Customer not found');
-    }
+    const strategy = this.getEntityStrategy(channel);
+    const entityId = await strategy.getEntityId(contact);
 
     const code = this.generateRandomCode(6);
     const verification: VerificationCode = {
       id: uuidv4(),
-      entityId: customer.id,
+      entityId: entityId,
       contact,
       channel,
       code,
@@ -33,12 +32,12 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
 
     await this.verifyRepo.create(verification);
 
-    const provider = this.providers.find(p => p.channel === channel);
-    if (!provider) {
-      throw new Error(`Channel ${channel} is not supported or misconfigured`);
+    const provider = this.getNotificationProvider(channel);
+    if (provider.validate) {
+      provider.validate(contact);
     }
 
-    await provider.send(contact, `Your verification code is: ${code}`);
+    await provider.send(contact, code);
   }
 
   async verifyCode(contact: string, code: string): Promise<string> {
@@ -51,15 +50,26 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
     verification.updatedAt = new Date();
     await this.verifyRepo.update(verification);
 
-    const customer = await this.customerRepo.getByPhone(contact);
-    if (customer) {
-      customer.isActive = true;
-      customer.updatedAt = new Date();
-      await this.customerRepo.update(customer);
-    }
+    const strategy = this.getEntityStrategy(verification.channel);
+    await strategy.onVerified(contact);
 
     return verification.entityId;
+  }
 
+  private getEntityStrategy(channel: Channel): VerificationEntityStrategy {
+    const strategy = this.entityStrategies.find(s => s.channels.includes(channel));
+    if (!strategy) {
+      throw new Error(`No entity strategy found for channel ${channel}`);
+    }
+    return strategy;
+  }
+
+  private getNotificationProvider(channel: Channel): NotificationProvider {
+    const provider = this.providers.find(p => p.channels.includes(channel));
+    if (!provider) {
+      throw new Error(`Notification provider for ${channel} is not configured`);
+    }
+    return provider;
   }
 
   private generateRandomCode(length: number): string {

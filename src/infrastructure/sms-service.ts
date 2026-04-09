@@ -1,4 +1,4 @@
-import { SMSService } from '../domain/services/sms-service';
+import { SMSService } from '../domain/notifications/sms-service';
 
 export class ConsoleSMSService implements SMSService {
   async sendSMS(contact: string, message: string): Promise<void> {
@@ -11,7 +11,7 @@ export class TwilioSMSService implements SMSService {
     private accountSid: string,
     private authToken: string,
     private fromPhone: string
-  ) {}
+  ) { }
 
   async sendSMS(contact: string, message: string): Promise<void> {
     // Implement Twilio API call

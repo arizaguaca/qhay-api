@@ -40,9 +40,11 @@ import { createOrderRoutes } from './infrastructure/web/routes/order-routes';
 import { createQRCodeRoutes } from './infrastructure/web/routes/qrcode-routes';
 import { createReservationRoutes } from './infrastructure/web/routes/reservation-routes';
 import { createVerificationRoutes } from './infrastructure/web/routes/verification-routes';
-import { ConsoleSMSService } from './infrastructure/sms-service';
-import { SMSNotificationProvider } from './infrastructure/notifications/sms-notification-provider';
-import { EmailNotificationProvider } from './infrastructure/notifications/email-notification-provider';
+import { SMSNotification } from './infrastructure/notifications/sms-notification';
+import { WSPNotification } from './infrastructure/notifications/wsp-notification';
+import { EmailNotification } from './infrastructure/notifications/email-notification';
+import { UserLookupStrategy } from './application/strategies/user-lookup-strategy';
+import { CustomerLookupStrategy } from './application/strategies/customer-lookup-strategy';
 
 async function main() {
   const config = loadConfig();
@@ -71,10 +73,10 @@ async function main() {
   const categoryRepo = new MySQLCategoryRepository(db);
 
   // Setup Infrastructure
-  const smsService = new ConsoleSMSService();
   const notificationProviders = [
-    new SMSNotificationProvider(smsService),
-    new EmailNotificationProvider(),
+    new SMSNotification(),
+    new EmailNotification(),
+    new WSPNotification(),
   ];
 
   // Setup Use Cases
@@ -86,7 +88,12 @@ async function main() {
   const orderUseCase = new OrderUseCaseImpl(orderRepo);
   const qrCodeUseCase = new QRCodeUseCaseImpl(qrCodeRepo);
   const reservationUseCase = new ReservationUseCaseImpl(reservationRepo);
-  const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, customerRepo, notificationProviders);
+  const verificationStrategies = [
+    new UserLookupStrategy(userRepo),
+    new CustomerLookupStrategy(customerRepo),
+  ];
+
+  const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, notificationProviders, verificationStrategies);
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
