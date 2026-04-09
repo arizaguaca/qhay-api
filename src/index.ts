@@ -22,6 +22,8 @@ import { OrderUseCaseImpl } from './application/use-cases/order-use-case-impl';
 import { QRCodeUseCaseImpl } from './application/use-cases/qrcode-use-case-impl';
 import { ReservationUseCaseImpl } from './application/use-cases/reservation-use-case-impl';
 import { VerificationUseCaseImpl } from './application/use-cases/verification-use-case-impl';
+import { UserRegistrationUseCase } from './application/use-cases/registration/user-registration-use-case';
+import { CustomerRegistrationUseCase } from './application/use-cases/registration/customer-registration-use-case';
 import { RestaurantController } from './infrastructure/web/controllers/restaurant-controller';
 import { UserController } from './infrastructure/web/controllers/user-controller';
 import { CustomerController } from './infrastructure/web/controllers/customer-controller';
@@ -102,10 +104,13 @@ async function main() {
     config.verificationCodeExpirationMinutes
   );
 
+  const userRegistrationUseCase = new UserRegistrationUseCase(userUseCase, verificationUseCase);
+  const customerRegistrationUseCase = new CustomerRegistrationUseCase(customerUseCase, verificationUseCase);
+
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
-  const userController = new UserController(userUseCase);
-  const customerController = new CustomerController(customerUseCase);
+  const userController = new UserController(userUseCase, userRegistrationUseCase);
+  const customerController = new CustomerController(customerUseCase, customerRegistrationUseCase);
   const menuController = new MenuController(menuUseCase);
   const operatingHourController = new OperatingHourController(operatingHourUseCase);
   const orderController = new OrderController(orderUseCase);

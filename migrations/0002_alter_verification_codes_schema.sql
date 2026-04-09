@@ -1,5 +1,6 @@
 ALTER TABLE verification_codes
 	ADD COLUMN entity_id VARCHAR(36) NOT NULL,
+	ADD COLUMN entity_type VARCHAR(20) NOT NULL AFTER entity_id,
 	ADD COLUMN contact VARCHAR(255) NOT NULL,
   	ADD COLUMN channel VARCHAR(20) NOT NULL,  
   	ADD COLUMN verified BOOLEAN NOT NULL,

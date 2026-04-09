@@ -1,8 +1,9 @@
-import { Channel } from '../../domain/entities/verification-code';
+import { Channel, EntityType } from '../../domain/entities/verification-code';
 import { VerificationEntityStrategy } from '../../domain/strategies/verification-entity-strategy';
 import { CustomerRepository } from '../../domain/repositories/customer-repository';
 
 export class CustomerLookupStrategy implements VerificationEntityStrategy {
+  readonly entityType = EntityType.CUSTOMER;
   readonly channels = [Channel.SMS, Channel.WHATSAPP];
 
   constructor(private customerRepo: CustomerRepository) {}

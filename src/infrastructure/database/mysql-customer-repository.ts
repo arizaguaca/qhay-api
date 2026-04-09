@@ -3,7 +3,7 @@ import { CustomerRepository } from '../../domain/repositories/customer-repositor
 import { MySQLConnection } from './mysql-connection';
 
 export class MySQLCustomerRepository implements CustomerRepository {
-  constructor(private db: MySQLConnection) {}
+  constructor(private db: MySQLConnection) { }
 
   async create(customer: Customer): Promise<void> {
     const conn = this.db.getConnection();
@@ -13,7 +13,7 @@ export class MySQLCustomerRepository implements CustomerRepository {
         customer.id,
         customer.name || null,
         customer.phone,
-        customer.isActive,
+        customer.isActive || false,
         this.formatDate(customer.createdAt),
         this.formatDate(customer.updatedAt),
       ]
@@ -57,7 +57,7 @@ export class MySQLCustomerRepository implements CustomerRepository {
       [
         customer.name || null,
         customer.phone,
-        customer.isActive,
+        customer.isActive || false,
         this.formatDate(customer.updatedAt),
         customer.id,
       ]

@@ -4,9 +4,15 @@ export enum Channel {
   SMS = 'sms'
 }
 
+export enum EntityType {
+  USER = 'user',
+  CUSTOMER = 'customer'
+}
+
 export interface VerificationCode {
   id: string;
   entityId: string;
+  entityType: EntityType;
   contact: string;
   channel: Channel;
   code: string;

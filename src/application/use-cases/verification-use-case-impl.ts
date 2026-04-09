@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Channel, VerificationCode } from '../../domain/entities/verification-code';
+import { Channel, EntityType, VerificationCode } from '../../domain/entities/verification-code';
 import { VerificationRepository } from '../../domain/repositories/verification-repository';
 import { NotificationProvider } from '../../domain/notifications/notification-provider';
 import { VerificationUseCase } from './verification-use-case';
@@ -14,14 +14,15 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
     private expirationMinutes: number
   ) { }
 
-  async sendCode(contact: string, channel: Channel): Promise<void> {
-    const strategy = this.getEntityStrategy(channel);
+  async sendCode(contact: string, channel: Channel, entityType: EntityType): Promise<void> {
+    const strategy = this.getEntityStrategy(channel, entityType);
     const entityId = await strategy.getEntityId(contact);
 
     const code = this.generateRandomCode(6);
     const verification: VerificationCode = {
       id: uuidv4(),
       entityId: entityId,
+      entityType: entityType,
       contact,
       channel,
       code,
@@ -51,14 +52,14 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
     verification.updatedAt = new Date();
     await this.verifyRepo.update(verification);
 
-    const strategy = this.getEntityStrategy(verification.channel);
+    const strategy = this.getEntityStrategy(verification.channel, verification.entityType);
     await strategy.onVerified(contact);
 
     return verification.entityId;
   }
 
-  private getEntityStrategy(channel: Channel): VerificationEntityStrategy {
-    const strategy = this.entityStrategies.find(s => s.channels.includes(channel));
+  private getEntityStrategy(channel: Channel, entityType: EntityType): VerificationEntityStrategy {
+    const strategy = this.entityStrategies.find(s => s.channels.includes(channel) && s.entityType === entityType);
     if (!strategy) {
       throw new Error(`No entity strategy found for channel ${channel}`);
     }
