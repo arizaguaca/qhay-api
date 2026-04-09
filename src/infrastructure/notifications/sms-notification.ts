@@ -1,8 +1,20 @@
 import { NotificationProvider } from '../../domain/notifications/notification-provider';
 import { Channel } from '../../domain/entities/verification-code';
+import { Config } from '../../config/config';
+import { TemplateManager } from './template-manager';
+import twilio from 'twilio';
 
 export class SMSNotification implements NotificationProvider {
   readonly channels = [Channel.SMS];
+  private client: twilio.Twilio;
+  private from: string;
+  private expirationMinutes: number;
+
+  constructor(config: Config, private templateManager: TemplateManager) {
+    this.client = twilio(config.twilioSid, config.twilioAuth);
+    this.from = config.twilioPhone;
+    this.expirationMinutes = config.verificationCodeExpirationMinutes;
+  }
 
   validate(contact: string): void {
     const phoneRegex = /^\+?[1-9]\d{1,14}$/;
@@ -13,5 +25,22 @@ export class SMSNotification implements NotificationProvider {
 
   async send(contact: string, message: string): Promise<void> {
     console.log(`[SMS] Sending to ${contact}: ${message}`);
+
+    const body = this.templateManager.getSMS('verification', { 
+      code: message,
+      expiresIn: this.expirationMinutes.toString()
+    });
+
+    try {
+      const response = await this.client.messages.create({
+        body: body,
+        from: this.from,
+        to: contact
+      });
+      console.log('Success SMS con Twilio:', response.sid);
+    } catch (error) {
+      console.error('Error enviando SMS con Twilio:', error);
+      throw error;
+    }
   }
 }

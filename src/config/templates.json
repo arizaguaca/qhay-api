@@ -1,0 +1,10 @@
+{
+  "verification": {
+    "sms": "Qhay: Tu código de verificación es {{code}}. Este código vence en {{expiresIn}} minutos. No lo compartas con nadie.",
+    "wsp": "✅ *Qhay*:\nHola, Tu código de verificación es *{{code}}*.\nEste código vence en {{expiresIn}} minutos.\nNo lo compartas con nadie.",
+    "email": {
+      "subject": "Código de verificación",
+      "body": "<h1> Tu código de verificación es: {{code}} </h1> <h3> Este código vence en {{expiresIn}} minutos. </h3>"
+    }
+  }
+}

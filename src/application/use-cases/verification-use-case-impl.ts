@@ -10,7 +10,8 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
   constructor(
     private verifyRepo: VerificationRepository,
     private providers: NotificationProvider[],
-    private entityStrategies: VerificationEntityStrategy[]
+    private entityStrategies: VerificationEntityStrategy[],
+    private expirationMinutes: number
   ) { }
 
   async sendCode(contact: string, channel: Channel): Promise<void> {
@@ -25,7 +26,7 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
       channel,
       code,
       verified: false,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      expiresAt: new Date(Date.now() + this.expirationMinutes * 60 * 1000),
       createdAt: new Date(),
       updatedAt: new Date(),
     };

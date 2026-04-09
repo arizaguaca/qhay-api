@@ -43,6 +43,7 @@ import { createVerificationRoutes } from './infrastructure/web/routes/verificati
 import { SMSNotification } from './infrastructure/notifications/sms-notification';
 import { WSPNotification } from './infrastructure/notifications/wsp-notification';
 import { EmailNotification } from './infrastructure/notifications/email-notification';
+import { TemplateManager } from './infrastructure/notifications/template-manager';
 import { UserLookupStrategy } from './application/strategies/user-lookup-strategy';
 import { CustomerLookupStrategy } from './application/strategies/customer-lookup-strategy';
 
@@ -73,10 +74,11 @@ async function main() {
   const categoryRepo = new MySQLCategoryRepository(db);
 
   // Setup Infrastructure
+  const templateManager = new TemplateManager();
   const notificationProviders = [
-    new SMSNotification(),
-    new EmailNotification(),
-    new WSPNotification(),
+    new SMSNotification(config, templateManager),
+    new EmailNotification(config, templateManager),
+    new WSPNotification(config, templateManager),
   ];
 
   // Setup Use Cases
@@ -93,7 +95,12 @@ async function main() {
     new CustomerLookupStrategy(customerRepo),
   ];
 
-  const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, notificationProviders, verificationStrategies);
+  const verificationUseCase = new VerificationUseCaseImpl(
+    verificationRepo, 
+    notificationProviders, 
+    verificationStrategies,
+    config.verificationCodeExpirationMinutes
+  );
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
@@ -143,7 +150,7 @@ async function main() {
   app.use(`${apiPrefix}/verification`, createVerificationRoutes(verificationController));
 
   // Start Server
-  const port = process.env.PORT || 8080;
+  const port = config.port;
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
   });

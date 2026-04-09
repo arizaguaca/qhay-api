@@ -1,10 +1,20 @@
 import { NotificationProvider } from '../../domain/notifications/notification-provider';
 import { Channel } from '../../domain/entities/verification-code';
+import { Config } from '../../config/config';
+import { TemplateManager } from './template-manager';
 import { Resend } from 'resend';
 
 export class EmailNotification implements NotificationProvider {
   readonly channels = [Channel.EMAIL];
-  private resend = new Resend(process.env.EMAIL_RESEND_API_KEY!);
+  private resend: Resend;
+  private from: string;
+  private expirationMinutes: number;
+
+  constructor(config: Config, private templateManager: TemplateManager) {
+    this.resend = new Resend(config.emailApiKey);
+    this.from = config.emailFrom;
+    this.expirationMinutes = config.verificationCodeExpirationMinutes;
+  }
 
   validate(contact: string): void {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,15 +25,22 @@ export class EmailNotification implements NotificationProvider {
 
   async send(contact: string, message: string): Promise<void> {
     console.log(`[EMAIL] Sending to ${contact}: ${message}`);
+
+    const template = this.templateManager.getEmail('verification', { 
+      code: message,
+      expiresIn: this.expirationMinutes.toString()
+    });
+
     const { data, error } = await this.resend.emails.send({
-      from: process.env.EMAIL_FROM!,
+      from: this.from,
       to: [contact],
-      subject: 'Código de verificación',
-      html: `<h1> Tu código de verificación es: ${message} </h1>`,
+      subject: template.subject,
+      html: template.body,
     });
 
     if (error) {
-      return console.error({ error });
+      console.error({ error });
+      throw error;
     }
   }
 }
