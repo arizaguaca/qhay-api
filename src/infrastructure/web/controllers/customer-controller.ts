@@ -1,14 +1,21 @@
 import { Request, Response } from 'express';
 import { CustomerUseCaseImpl } from '../../../application/use-cases/customer-use-case-impl';
+import { CustomerRegistrationUseCase } from '../../../application/use-cases/registration/customer-registration-use-case';
 
 export class CustomerController {
-  constructor(private customerUseCase: CustomerUseCaseImpl) {}
+  constructor(
+    private customerUseCase: CustomerUseCaseImpl,
+    private customerRegistrationUseCase: CustomerRegistrationUseCase
+  ) {}
 
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const customer = req.body;
-      await this.customerUseCase.create(customer);
-      res.status(201).json({ message: 'Customer created successfully' });
+      const { channel, ...customer } = req.body;
+      if (!channel) {
+        throw new Error('Channel is required (sms or whatsapp)');
+      }
+      await this.customerRegistrationUseCase.execute(customer, channel);
+      res.status(201).json({ message: 'Customer created successfully. Verification code sent.' });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }

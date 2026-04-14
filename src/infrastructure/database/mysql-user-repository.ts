@@ -3,7 +3,7 @@ import { UserRepository } from '../../domain/repositories/user-repository';
 import { MySQLConnection } from './mysql-connection';
 
 export class MySQLUserRepository implements UserRepository {
-  constructor(private db: MySQLConnection) {}
+  constructor(private db: MySQLConnection) { }
 
   async create(user: User): Promise<void> {
     const conn = this.db.getConnection();
@@ -17,7 +17,7 @@ export class MySQLUserRepository implements UserRepository {
         user.password,
         user.role,
         user.restaurantId || null,
-        user.isVerified,
+        user.isVerified || false,
         user.createdAt instanceof Date
           ? user.createdAt.toISOString().slice(0, 19).replace('T', ' ')
           : new Date(user.createdAt).toISOString().slice(0, 19).replace('T', ' '),
@@ -129,7 +129,7 @@ export class MySQLUserRepository implements UserRepository {
         user.phone,
         user.role,
         user.restaurantId || null,
-        user.isVerified,
+        user.isVerified || false,
         user.updatedAt instanceof Date
           ? user.updatedAt.toISOString().slice(0, 19).replace('T', ' ')
           : new Date(user.updatedAt).toISOString().slice(0, 19).replace('T', ' '),

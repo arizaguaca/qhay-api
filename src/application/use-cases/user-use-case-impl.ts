@@ -11,6 +11,7 @@ export class UserUseCaseImpl {
       user.id = uuidv4();
     }
     user.password = await bcrypt.hash(user.password, 10);
+    user.isVerified = false;
     user.createdAt = new Date();
     user.updatedAt = new Date();
 

@@ -2,7 +2,7 @@ export interface Customer {
   id: string;
   name?: string;
   phone: string;
-  isActive: boolean;
+  isActive?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

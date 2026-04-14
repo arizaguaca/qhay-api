@@ -1,54 +1,77 @@
 import { v4 as uuidv4 } from 'uuid';
-import { VerificationCode } from '../../domain/entities/verification-code';
+import { Channel, EntityType, VerificationCode } from '../../domain/entities/verification-code';
 import { VerificationRepository } from '../../domain/repositories/verification-repository';
-import { SMSService } from '../../domain/repositories/sms-service';
-import { CustomerRepository } from '../../domain/repositories/customer-repository';
+import { NotificationProvider } from '../../domain/notifications/notification-provider';
+import { VerificationUseCase } from './verification-use-case';
 
-export class VerificationUseCaseImpl {
+import { VerificationEntityStrategy } from '../../domain/strategies/verification-entity-strategy';
+
+export class VerificationUseCaseImpl implements VerificationUseCase {
   constructor(
     private verifyRepo: VerificationRepository,
-    private customerRepo: CustomerRepository,
-    private smsService: SMSService
-  ) {}
+    private providers: NotificationProvider[],
+    private entityStrategies: VerificationEntityStrategy[],
+    private expirationMinutes: number
+  ) { }
 
-  async sendCode(phone: string): Promise<void> {
+  async sendCode(contact: string, channel: Channel, entityType: EntityType): Promise<void> {
+    const strategy = this.getEntityStrategy(channel, entityType);
+    const entityId = await strategy.getEntityId(contact);
+
     const code = this.generateRandomCode(6);
     const verification: VerificationCode = {
       id: uuidv4(),
-      phone,
+      entityId: entityId,
+      entityType: entityType,
+      contact,
+      channel,
       code,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      verified: false,
+      expiresAt: new Date(Date.now() + this.expirationMinutes * 60 * 1000),
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     await this.verifyRepo.create(verification);
-    await this.smsService.sendSMS(phone, `Your verification code is: ${code}`);
+
+    const provider = this.getNotificationProvider(channel);
+    if (provider.validate) {
+      provider.validate(contact);
+    }
+
+    await provider.send(contact, code);
   }
 
-  async verifyCode(phone: string, code: string): Promise<string> {
-    const verification = await this.verifyRepo.getLatestByPhone(phone);
+  async verifyCode(contact: string, code: string): Promise<string> {
+    const verification = await this.verifyRepo.getLatestByContact(contact);
     if (!verification || verification.code !== code || verification.expiresAt < new Date()) {
       throw new Error('Invalid or expired code');
     }
 
-    // Create customer if not exists
-    const existingCustomer = await this.customerRepo.getByPhone(phone);
-    if (!existingCustomer) {
-      const newCustomer = {
-        id: uuidv4(),
-        name: '',
-        phone,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      await this.customerRepo.create(newCustomer);
-      await this.verifyRepo.deleteByPhone(phone);
-      return newCustomer.id;
-    } else {
-      await this.verifyRepo.deleteByPhone(phone);
-      return existingCustomer.id;
+    verification.verified = true;
+    verification.updatedAt = new Date();
+    await this.verifyRepo.update(verification);
+
+    const strategy = this.getEntityStrategy(verification.channel, verification.entityType);
+    await strategy.onVerified(contact);
+
+    return verification.entityId;
+  }
+
+  private getEntityStrategy(channel: Channel, entityType: EntityType): VerificationEntityStrategy {
+    const strategy = this.entityStrategies.find(s => s.channels.includes(channel) && s.entityType === entityType);
+    if (!strategy) {
+      throw new Error(`No entity strategy found for channel ${channel}`);
     }
+    return strategy;
+  }
+
+  private getNotificationProvider(channel: Channel): NotificationProvider {
+    const provider = this.providers.find(p => p.channels.includes(channel));
+    if (!provider) {
+      throw new Error(`Notification provider for ${channel} is not configured`);
+    }
+    return provider;
   }
 
   private generateRandomCode(length: number): string {
