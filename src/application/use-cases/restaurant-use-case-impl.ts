@@ -5,7 +5,7 @@ import { Restaurant } from '../../domain/entities/restaurant';
 import { RestaurantRepository } from '../../domain/repositories/restaurant-repository';
 
 export class RestaurantUseCaseImpl {
-  constructor(private restaurantRepo: RestaurantRepository) {}
+  constructor(private restaurantRepo: RestaurantRepository) { }
 
   async create(restaurant: Restaurant): Promise<void> {
     if (!restaurant.phone?.trim()) {
@@ -17,8 +17,8 @@ export class RestaurantUseCaseImpl {
     if (!restaurant.cuisineType?.trim()) {
       throw new Error('cuisineType is required');
     }
-    if (restaurant.locationType === 'Food Court' && !restaurant.mallName?.trim()) {
-      throw new Error('mallName is required when locationType is Food Court');
+    if (restaurant.locationType === 'Food Court' && !restaurant.mallId?.trim()) {
+      throw new Error('mall is required when locationType is Food Court');
     }
     if (!restaurant.id) {
       restaurant.id = uuidv4();
@@ -59,9 +59,9 @@ export class RestaurantUseCaseImpl {
 
     // Validación condicional para Food Court
     const finalLocationType = restaurant.locationType ?? existing.locationType;
-    const finalMallName = restaurant.mallName ?? existing.mallName;
-    if (finalLocationType === 'Food Court' && (!finalMallName || !finalMallName.trim())) {
-      throw new Error('mallName is required when locationType is Food Court');
+    const finalMallId = restaurant.mallId ?? existing.mallId;
+    if (finalLocationType === 'Food Court' && (!finalMallId || !finalMallId.trim())) {
+      throw new Error('mall is required when locationType is Food Court');
     }
 
     // Merge only specified fields, preserve createdAt

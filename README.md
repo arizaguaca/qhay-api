@@ -1,91 +1,102 @@
 # QHay API - Clean Architecture
 
-This is the backend for the QHay restaurant management system, implemented following the **Clean Architecture** principles in Node.js with TypeScript.
+Esta es la API del sistema de gestión de restaurantes QHay, implementada siguiendo los principios de **Clean Architecture** en Node.js con TypeScript.
 
-## Database Setup (MySQL)
+## Descripción del Proyecto
 
-The backend requires a MySQL database. Configure the connection via environment variables (or use default values):
+QHay es una plataforma diseñada para permitir a los clientes realizar pedidos de forma autónoma en restaurantes a través de códigos QR. La API gestiona restaurantes, usuarios, clientes, menús, pedidos, horarios de atención, reservas y centros comerciales (malls).
 
-- `DB_USER`: User (default: `root`)
-- `DB_PASS`: Password (default: ``)
-- `DB_HOST`: Host (default: `localhost`)
-- `DB_PORT`: Port (default: `3306`)
-- `DB_NAME`: Database name (default: `table_db`)
+## Características Principales
 
-### Initialize DB
+- **Arquitectura Limpia**: Separación clara entre dominio, aplicación e infraestructura.
+- **Gestión de Restaurantes y Malls**: Control detallado de establecimientos.
+- **Menús Dinámicos**: Soporte para categorías y modificadores de productos.
+- **Códigos QR**: Generación automática de códigos QR para cada restaurante.
+- **Autenticación**: Seguridad mediante JWT y Bcrypt.
+- **Gestión de Imágenes**: Procesamiento y optimización de imágenes (Sharp y Multer).
+- **Servicio de Verificación**: Sistema de códigos de verificación vía SMS.
 
-Execute the `database.sql` script in your MySQL server to create the necessary tables:
+## Configuración de la Base de Datos (MySQL)
 
-```sql
-CREATE DATABASE table_db;
-USE table_db;
--- Execute contents of database.sql
-```
+La API requiere una base de datos MySQL. Configura la conexión mediante variables de entorno (puedes usar los archivos `.env.*` como referencia):
 
-## Project Structure
+- `DB_USER`: Usuario (ej: `root`)
+- `DB_PASS`: Contraseña
+- `DB_HOST`: Host (ej: `localhost`)
+- `DB_PORT`: Puerto (ej: `3306`)
+- `DB_NAME`: Nombre de la base de datos (ej: `qhay_db`)
 
-- `src/config/`: Configuration loading from environment variables.
-- `src/domain/entities/`: Business entities and domain models.
-- `src/domain/repositories/`: Repository interfaces (contracts).
-- `src/application/use-cases/`: Application business logic (use cases).
-- `src/infrastructure/database/`: Database implementations (MySQL repositories).
-- `src/infrastructure/web/controllers/`: HTTP request handlers.
-- `src/infrastructure/web/routes/`: Route definitions.
-- `src/index.ts`: Application entry point with dependency injection.
+### Inicialización de la DB
 
-## How to Run
+1. Crea la base de datos en tu servidor MySQL.
+2. Ejecuta los scripts en la carpeta `migrations/` en orden para crear las tablas y campos necesarios.
 
-1. Ensure Node.js and npm are installed.
-2. Install dependencies:
+## Estructura del Proyecto
+
+- `src/domain/entities/`: Entidades de negocio y modelos de dominio.
+- `src/domain/repositories/`: Interfaces de repositorio (contratos).
+- `src/application/use-cases/`: Lógica de negocio de la aplicación (casos de uso).
+- `src/infrastructure/database/`: Implementaciones de bases de datos (repositorios MySQL).
+- `src/infrastructure/web/controllers/`: Controladores de peticiones HTTP.
+- `src/infrastructure/web/routes/`: Definición de rutas Express.
+- `src/infrastructure/middlewares/`: Middlewares para subida de archivos y otros.
+- `uploads/`: Directorio donde se almacenan logos e imágenes de menús.
+- `migrations/`: Scripts SQL para la estructura de la base de datos.
+- `src/index.ts`: Punto de entrada de la aplicación con inyección de dependencias.
+
+## Instalación y Ejecución
+
+1. Asegúrate de tener Node.js instalado.
+2. Instala las dependencias:
    ```bash
    npm install
    ```
-3. Build the project:
+3. Compila el proyecto:
    ```bash
    npm run build
    ```
-4. Start the server:
+4. Inicia el servidor:
    ```bash
    npm start
    ```
-   Or for development:
+   O para desarrollo:
    ```bash
    npm run dev
    ```
-5. The server will be available at `http://localhost:8080`.
+5. El servidor estará disponible en `http://localhost:8080`.
 
-## Endpoints
+## Endpoints Principales (Prefijo: `/api/v1`)
 
-- `POST /restaurants`: Create a new restaurant.
-- `GET /restaurants`: List all restaurants.
-- `GET /restaurants/:id`: Get restaurant by ID.
-- `PUT /restaurants/:id`: Update restaurant.
-- `GET /restaurants/owner/:ownerId`: Get restaurants by owner.
+### Restaurantes
+- `POST /restaurants`: Crear restaurante (con logo).
+- `GET /restaurants`: Listar todos los restaurantes.
+- `GET /restaurants/:id`: Obtener detalle.
+- `PUT /restaurants/:id`: Actualizar datos.
+- `GET /restaurants/owner/:ownerId`: Listar por dueño.
 
-- `POST /users`: Create a new user.
-- `POST /users/login`: User login.
-- And more for users, customers, menus, orders, etc.
+### Usuarios y Autenticación
+- `POST /users`: Crear usuario.
+- `POST /auth/login`: Iniciar sesión.
+- `GET /users/:id/restaurants`: Restaurantes asociados al usuario.
 
-## Testing
+### Clientes y Verificación
+- `POST /customers`: Registrar cliente.
+- `POST /verification/send`: Enviar código SMS.
+- `POST /verification/verify`: Validar código.
 
-Run tests with:
+### Menús y Pedidos
+- `GET /menus/restaurant/:id`: Obtener menú completo de un restaurante.
+- `POST /orders`: Crear un nuevo pedido.
+- `GET /orders/restaurant/:id`: Listar pedidos de un restaurante.
+
+### Otros
+- `GET /malls`: Listar centros comerciales.
+- `GET /qrcodes/restaurant/:id`: Obtener/generar código QR.
+- `GET /operating-hours/restaurant/:id`: Horarios de atención.
+
+## Pruebas
+
+Ejecuta los tests con:
 ```bash
 npm test
 ```
-
-### Cómo ejecutar
-
-1. Entra en la carpeta del frontend:
-   ```bash
-   cd frontend
-   ```
-2. Instala dependencias:
-   ```bash
-   npm install
-   ```
-3. Ejecuta en modo desarrollo:
-   ```bash
-   npm run dev
-   ```
-
-app para realizar pedidos de forma autonoma en los restaurantes

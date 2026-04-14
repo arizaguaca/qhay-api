@@ -13,6 +13,7 @@ import { MySQLQRCodeRepository } from './infrastructure/database/mysql-qrcode-re
 import { MySQLReservationRepository } from './infrastructure/database/mysql-reservation-repository';
 import { MySQLVerificationRepository } from './infrastructure/database/mysql-verification-repository';
 import { MySQLCategoryRepository } from './infrastructure/database/mysql-category-repository';
+import { MySQLMallRepository } from './infrastructure/database/mysql-mall-repository';
 import { RestaurantUseCaseImpl } from './application/use-cases/restaurant-use-case-impl';
 import { UserUseCaseImpl } from './application/use-cases/user-use-case-impl';
 import { CustomerUseCaseImpl } from './application/use-cases/customer-use-case-impl';
@@ -22,6 +23,7 @@ import { OrderUseCaseImpl } from './application/use-cases/order-use-case-impl';
 import { QRCodeUseCaseImpl } from './application/use-cases/qrcode-use-case-impl';
 import { ReservationUseCaseImpl } from './application/use-cases/reservation-use-case-impl';
 import { VerificationUseCaseImpl } from './application/use-cases/verification-use-case-impl';
+import { MallUseCase } from './application/use-cases/mall-use-case';
 import { RestaurantController } from './infrastructure/web/controllers/restaurant-controller';
 import { UserController } from './infrastructure/web/controllers/user-controller';
 import { CustomerController } from './infrastructure/web/controllers/customer-controller';
@@ -31,6 +33,7 @@ import { OrderController } from './infrastructure/web/controllers/order-controll
 import { QRCodeController } from './infrastructure/web/controllers/qrcode-controller';
 import { ReservationController } from './infrastructure/web/controllers/reservation-controller';
 import { VerificationController } from './infrastructure/web/controllers/verification-controller';
+import { MallController } from './infrastructure/web/controllers/mall-controller';
 import { createRestaurantRoutes } from './infrastructure/web/routes/restaurant-routes';
 import { createUserRoutes } from './infrastructure/web/routes/user-routes';
 import { createCustomerRoutes } from './infrastructure/web/routes/customer-routes';
@@ -40,6 +43,7 @@ import { createOrderRoutes } from './infrastructure/web/routes/order-routes';
 import { createQRCodeRoutes } from './infrastructure/web/routes/qrcode-routes';
 import { createReservationRoutes } from './infrastructure/web/routes/reservation-routes';
 import { createVerificationRoutes } from './infrastructure/web/routes/verification-routes';
+import { createMallRoutes } from './infrastructure/web/routes/mall-routes';
 import { ConsoleSMSService } from './infrastructure/sms-service';
 
 async function main() {
@@ -67,6 +71,7 @@ async function main() {
   const reservationRepo = new MySQLReservationRepository(db);
   const verificationRepo = new MySQLVerificationRepository(db);
   const categoryRepo = new MySQLCategoryRepository(db);
+  const mallRepo = new MySQLMallRepository(db);
 
   // Setup Infrastructure
   const smsService = new ConsoleSMSService();
@@ -81,6 +86,7 @@ async function main() {
   const qrCodeUseCase = new QRCodeUseCaseImpl(qrCodeRepo);
   const reservationUseCase = new ReservationUseCaseImpl(reservationRepo);
   const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, customerRepo, smsService);
+  const mallUseCase = new MallUseCase(mallRepo);
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
@@ -92,6 +98,7 @@ async function main() {
   const qrCodeController = new QRCodeController(qrCodeUseCase);
   const reservationController = new ReservationController(reservationUseCase);
   const verificationController = new VerificationController(verificationUseCase);
+  const mallController = new MallController(mallUseCase);
 
   // Setup Routes
   const app = express();
@@ -128,6 +135,7 @@ async function main() {
   app.use(`${apiPrefix}/qrcodes`, createQRCodeRoutes(qrCodeController));
   app.use(`${apiPrefix}/reservations`, createReservationRoutes(reservationController));
   app.use(`${apiPrefix}/verification`, createVerificationRoutes(verificationController));
+  app.use(`${apiPrefix}/malls`, createMallRoutes(mallController));
 
   // Start Server
   const port = process.env.PORT || 8080;
