@@ -26,6 +26,16 @@ CREATE TABLE IF NOT EXISTS malls (
     city VARCHAR(50) DEFAULT 'Medellín'
 );
 
+
+CREATE TABLE IF NOT EXISTS cuisine_types (
+    id CHAR(36) PRIMARY KEY,
+    owner_id VARCHAR(36) NULL,
+    name VARCHAR(50) NOT NULL,
+    is_custom BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
 CREATE TABLE IF NOT EXISTS restaurants (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

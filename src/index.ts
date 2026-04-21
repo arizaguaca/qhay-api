@@ -14,6 +14,7 @@ import { MySQLReservationRepository } from './infrastructure/database/mysql-rese
 import { MySQLVerificationRepository } from './infrastructure/database/mysql-verification-repository';
 import { MySQLCategoryRepository } from './infrastructure/database/mysql-category-repository';
 import { MySQLMallRepository } from './infrastructure/database/mysql-mall-repository';
+import { MySQLCuisineTypeRepository } from './infrastructure/database/mysql-cuisine-type-repository';
 import { RestaurantUseCaseImpl } from './application/use-cases/restaurant-use-case-impl';
 import { UserUseCaseImpl } from './application/use-cases/user-use-case-impl';
 import { CustomerUseCaseImpl } from './application/use-cases/customer-use-case-impl';
@@ -24,6 +25,7 @@ import { QRCodeUseCaseImpl } from './application/use-cases/qrcode-use-case-impl'
 import { ReservationUseCaseImpl } from './application/use-cases/reservation-use-case-impl';
 import { VerificationUseCaseImpl } from './application/use-cases/verification-use-case-impl';
 import { MallUseCase } from './application/use-cases/mall-use-case';
+import { CuisineTypeUseCase } from './application/use-cases/cuisine-type-use-case';
 import { RestaurantController } from './infrastructure/web/controllers/restaurant-controller';
 import { UserController } from './infrastructure/web/controllers/user-controller';
 import { CustomerController } from './infrastructure/web/controllers/customer-controller';
@@ -34,6 +36,7 @@ import { QRCodeController } from './infrastructure/web/controllers/qrcode-contro
 import { ReservationController } from './infrastructure/web/controllers/reservation-controller';
 import { VerificationController } from './infrastructure/web/controllers/verification-controller';
 import { MallController } from './infrastructure/web/controllers/mall-controller';
+import { CuisineTypeController } from './infrastructure/web/controllers/cuisine-type-controller';
 import { createRestaurantRoutes } from './infrastructure/web/routes/restaurant-routes';
 import { createUserRoutes } from './infrastructure/web/routes/user-routes';
 import { createCustomerRoutes } from './infrastructure/web/routes/customer-routes';
@@ -44,6 +47,7 @@ import { createQRCodeRoutes } from './infrastructure/web/routes/qrcode-routes';
 import { createReservationRoutes } from './infrastructure/web/routes/reservation-routes';
 import { createVerificationRoutes } from './infrastructure/web/routes/verification-routes';
 import { createMallRoutes } from './infrastructure/web/routes/mall-routes';
+import { createCuisineTypeRoutes } from './infrastructure/web/routes/cuisine-type-routes';
 import { ConsoleSMSService } from './infrastructure/sms-service';
 
 async function main() {
@@ -52,13 +56,19 @@ async function main() {
 
   // Setup Database
   const db = new MySQLConnection();
-  await db.connect({
+  const dbConfig = {
     host: config.dbHost,
     user: config.dbUser,
     password: config.dbPass,
     database: config.dbName,
     port: config.dbPort,
-  });
+  };
+
+  // Initialize database and tables if they don't exist
+  await db.initializeDatabase(dbConfig);
+  
+  // Connect to the database
+  await db.connect(dbConfig);
 
   // Setup Repositories
   const restaurantRepo = new MySQLRestaurantRepository(db);
@@ -72,6 +82,7 @@ async function main() {
   const verificationRepo = new MySQLVerificationRepository(db);
   const categoryRepo = new MySQLCategoryRepository(db);
   const mallRepo = new MySQLMallRepository(db);
+  const cuisineTypeRepo = new MySQLCuisineTypeRepository(db);
 
   // Setup Infrastructure
   const smsService = new ConsoleSMSService();
@@ -87,6 +98,7 @@ async function main() {
   const reservationUseCase = new ReservationUseCaseImpl(reservationRepo);
   const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, customerRepo, smsService);
   const mallUseCase = new MallUseCase(mallRepo);
+  const cuisineTypeUseCase = new CuisineTypeUseCase(cuisineTypeRepo);
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
@@ -99,6 +111,7 @@ async function main() {
   const reservationController = new ReservationController(reservationUseCase);
   const verificationController = new VerificationController(verificationUseCase);
   const mallController = new MallController(mallUseCase);
+  const cuisineTypeController = new CuisineTypeController(cuisineTypeUseCase);
 
   // Setup Routes
   const app = express();
@@ -136,6 +149,7 @@ async function main() {
   app.use(`${apiPrefix}/reservations`, createReservationRoutes(reservationController));
   app.use(`${apiPrefix}/verification`, createVerificationRoutes(verificationController));
   app.use(`${apiPrefix}/malls`, createMallRoutes(mallController));
+  app.use(`${apiPrefix}/cuisine-types`, createCuisineTypeRoutes(cuisineTypeController));
 
   // Start Server
   const port = process.env.PORT || 8080;
