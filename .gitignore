@@ -40,3 +40,9 @@ dist/
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Uploads
+uploads/logos/*
+!uploads/logos/.gitkeep
+uploads/menu/*
+!uploads/menu/.gitkeep
