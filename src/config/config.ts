@@ -10,6 +10,11 @@ export interface Config {
   twilioSid: string;
   twilioAuth: string;
   twilioPhone: string;
+  twilioWspPhone: string;
+  emailApiKey: string;
+  emailFrom: string;
+  port: number;
+  verificationCodeExpirationMinutes: number;
 }
 
 export function loadConfig(): Config {
@@ -28,5 +33,10 @@ export function loadConfig(): Config {
     twilioSid: process.env.TWILIO_ACCOUNT_SID || '',
     twilioAuth: process.env.TWILIO_AUTH_TOKEN || '',
     twilioPhone: process.env.TWILIO_PHONE_NUMBER || '',
+    twilioWspPhone: process.env.TWILIO_WHATSAPP_NUMBER || '',
+    emailApiKey: process.env.EMAIL_RESEND_API_KEY || '',
+    emailFrom: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+    port: parseInt(process.env.PORT || '8080', 10),
+    verificationCodeExpirationMinutes: parseInt(process.env.VERIFICATION_CODE_EXPIRATION_MINUTES || '10', 10),
   };
 }

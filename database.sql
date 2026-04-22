@@ -14,10 +14,15 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS verification_codes (
     id VARCHAR(36) PRIMARY KEY,
-    phone VARCHAR(20) NOT NULL,
+    entity_id VARCHAR(36) NOT NULL,
+    entity_type VARCHAR(20) NOT NULL,
+    contact VARCHAR(255) NOT NULL,
+    channel VARCHAR(20) NOT NULL,
     code VARCHAR(6) NOT NULL,
-    expires_at BIGINT NOT NULL,
-    created_at DATETIME NOT NULL
+    verified BOOLEAN DEFAULT FALSE,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS malls (

@@ -26,6 +26,8 @@ import { ReservationUseCaseImpl } from './application/use-cases/reservation-use-
 import { VerificationUseCaseImpl } from './application/use-cases/verification-use-case-impl';
 import { MallUseCase } from './application/use-cases/mall-use-case';
 import { CuisineTypeUseCase } from './application/use-cases/cuisine-type-use-case';
+import { UserRegistrationUseCase } from './application/use-cases/registration/user-registration-use-case';
+import { CustomerRegistrationUseCase } from './application/use-cases/registration/customer-registration-use-case';
 import { RestaurantController } from './infrastructure/web/controllers/restaurant-controller';
 import { UserController } from './infrastructure/web/controllers/user-controller';
 import { CustomerController } from './infrastructure/web/controllers/customer-controller';
@@ -48,7 +50,12 @@ import { createReservationRoutes } from './infrastructure/web/routes/reservation
 import { createVerificationRoutes } from './infrastructure/web/routes/verification-routes';
 import { createMallRoutes } from './infrastructure/web/routes/mall-routes';
 import { createCuisineTypeRoutes } from './infrastructure/web/routes/cuisine-type-routes';
-import { ConsoleSMSService } from './infrastructure/sms-service';
+import { SMSNotification } from './infrastructure/notifications/sms-notification';
+import { WSPNotification } from './infrastructure/notifications/wsp-notification';
+import { EmailNotification } from './infrastructure/notifications/email-notification';
+import { TemplateManager } from './infrastructure/notifications/template-manager';
+import { UserLookupStrategy } from './application/strategies/user-lookup-strategy';
+import { CustomerLookupStrategy } from './application/strategies/customer-lookup-strategy';
 
 async function main() {
   const config = loadConfig();
@@ -66,7 +73,7 @@ async function main() {
 
   // Initialize database and tables if they don't exist
   await db.initializeDatabase(dbConfig);
-  
+
   // Connect to the database
   await db.connect(dbConfig);
 
@@ -85,7 +92,12 @@ async function main() {
   const cuisineTypeRepo = new MySQLCuisineTypeRepository(db);
 
   // Setup Infrastructure
-  const smsService = new ConsoleSMSService();
+  const templateManager = new TemplateManager();
+  const notificationProviders = [
+    new SMSNotification(config, templateManager),
+    new EmailNotification(config, templateManager),
+    new WSPNotification(config, templateManager),
+  ];
 
   // Setup Use Cases
   const restaurantUseCase = new RestaurantUseCaseImpl(restaurantRepo);
@@ -96,14 +108,27 @@ async function main() {
   const orderUseCase = new OrderUseCaseImpl(orderRepo);
   const qrCodeUseCase = new QRCodeUseCaseImpl(qrCodeRepo);
   const reservationUseCase = new ReservationUseCaseImpl(reservationRepo);
-  const verificationUseCase = new VerificationUseCaseImpl(verificationRepo, customerRepo, smsService);
+  const verificationStrategies = [
+    new UserLookupStrategy(userRepo),
+    new CustomerLookupStrategy(customerRepo),
+  ];
+
+  const verificationUseCase = new VerificationUseCaseImpl(
+    verificationRepo,
+    notificationProviders,
+    verificationStrategies,
+    config.verificationCodeExpirationMinutes
+  );
+
+  const userRegistrationUseCase = new UserRegistrationUseCase(userUseCase, verificationUseCase);
+  const customerRegistrationUseCase = new CustomerRegistrationUseCase(customerUseCase, verificationUseCase);
   const mallUseCase = new MallUseCase(mallRepo);
   const cuisineTypeUseCase = new CuisineTypeUseCase(cuisineTypeRepo);
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
-  const userController = new UserController(userUseCase);
-  const customerController = new CustomerController(customerUseCase);
+  const userController = new UserController(userUseCase, userRegistrationUseCase);
+  const customerController = new CustomerController(customerUseCase, customerRegistrationUseCase);
   const menuController = new MenuController(menuUseCase);
   const operatingHourController = new OperatingHourController(operatingHourUseCase);
   const orderController = new OrderController(orderUseCase);
@@ -152,7 +177,7 @@ async function main() {
   app.use(`${apiPrefix}/cuisine-types`, createCuisineTypeRoutes(cuisineTypeController));
 
   // Start Server
-  const port = process.env.PORT || 8080;
+  const port = config.port;
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
   });

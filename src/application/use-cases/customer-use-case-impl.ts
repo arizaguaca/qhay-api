@@ -9,6 +9,7 @@ export class CustomerUseCaseImpl {
     if (!customer.id) {
       customer.id = uuidv4();
     }
+    customer.isActive = false;
     customer.createdAt = new Date();
     customer.updatedAt = new Date();
 
