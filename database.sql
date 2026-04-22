@@ -25,12 +25,20 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     updated_at DATETIME NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS cities (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL
+);
+
+
 CREATE TABLE IF NOT EXISTS malls (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    city VARCHAR(50) DEFAULT 'Medellín'
+    city_id CHAR(36) NOT NULL,
+    FOREIGN KEY (city_id) REFERENCES cities(id)
 );
-
 
 CREATE TABLE IF NOT EXISTS cuisine_types (
     id CHAR(36) PRIMARY KEY,
@@ -40,7 +48,6 @@ CREATE TABLE IF NOT EXISTS cuisine_types (
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-
 CREATE TABLE IF NOT EXISTS restaurants (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -49,6 +56,7 @@ CREATE TABLE IF NOT EXISTS restaurants (
     phone VARCHAR(20),
     location_type VARCHAR(100) NOT NULL,
     cuisine_type VARCHAR(100) NOT NULL,
+    city_id CHAR(36) NOT NULL,
     mall_id CHAR(36),
     link VARCHAR(512),
     owner_id VARCHAR(36) NOT NULL,
@@ -56,7 +64,8 @@ CREATE TABLE IF NOT EXISTS restaurants (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     FOREIGN KEY (owner_id) REFERENCES users(id),
-    FOREIGN KEY (mall_id) REFERENCES malls(id)
+    FOREIGN KEY (mall_id) REFERENCES malls(id),
+    FOREIGN KEY (city_id) REFERENCES cities(id)
 );
 
 CREATE TABLE IF NOT EXISTS categories (

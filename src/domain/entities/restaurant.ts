@@ -6,6 +6,7 @@ export interface Restaurant {
   phone: string;
   locationType: string;
   cuisineType: string;
+  cityId: string;
   mallId?: string | null;
   link?: string | null;
   ownerId: string;

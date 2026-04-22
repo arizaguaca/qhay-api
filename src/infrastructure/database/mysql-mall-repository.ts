@@ -3,15 +3,25 @@ import { MallRepository } from '../../domain/repositories/mall-repository';
 import { MySQLConnection } from './mysql-connection';
 
 export class MySQLMallRepository implements MallRepository {
-  constructor(private db: MySQLConnection) {}
+  constructor(private db: MySQLConnection) { }
 
   async fetch(): Promise<Mall[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM malls ORDER BY name ASC');
+    const [rows] = await conn.execute('SELECT * FROM malls');
     return (rows as any[]).map(row => ({
       id: row.id,
       name: row.name,
-      city: row.city,
+      cityId: row.city_id,
+    }));
+  }
+
+  async fetchByCity(cityId: string): Promise<Mall[]> {
+    const conn = this.db.getConnection();
+    const [rows] = await conn.execute('SELECT * FROM malls WHERE city_id = ?', [cityId]);
+    return (rows as any[]).map(row => ({
+      id: row.id,
+      name: row.name,
+      cityId: row.city_id,
     }));
   }
 
@@ -23,7 +33,7 @@ export class MySQLMallRepository implements MallRepository {
     return {
       id: row.id,
       name: row.name,
-      city: row.city,
+      cityId: row.city_id,
     };
   }
 }

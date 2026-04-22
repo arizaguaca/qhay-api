@@ -13,7 +13,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
   async create(restaurant: Restaurant): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO restaurants (id, name, description, address, phone, location_type, cuisine_type, mall_id, link, owner_id, logo_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO restaurants (id, name, description, address, phone, location_type, cuisine_type, city_id, mall_id, link, owner_id, logo_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         restaurant.id,
         restaurant.name,
@@ -22,6 +22,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
         restaurant.phone,
         restaurant.locationType,
         restaurant.cuisineType,
+        restaurant.cityId,
         restaurant.mallId ?? null,
         restaurant.link ?? null,
         restaurant.ownerId,
@@ -45,6 +46,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       phone: row.phone,
       locationType: row.location_type ?? '',
       cuisineType: row.cuisine_type ?? '',
+      cityId: row.city_id,
       mallId: row.mall_id ?? null,
       link: row.link ?? null,
       ownerId: row.owner_id,
@@ -65,6 +67,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       phone: row.phone,
       locationType: row.location_type ?? '',
       cuisineType: row.cuisine_type ?? '',
+      cityId: row.city_id,
       mallId: row.mall_id ?? null,
       link: row.link ?? null,
       ownerId: row.owner_id,
@@ -85,6 +88,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       phone: row.phone,
       locationType: row.location_type ?? '',
       cuisineType: row.cuisine_type ?? '',
+      cityId: row.city_id,
       mallId: row.mall_id ?? null,
       link: row.link ?? null,
       ownerId: row.owner_id,
@@ -97,7 +101,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
   async update(restaurant: Restaurant): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'UPDATE restaurants SET name = ?, description = ?, address = ?, phone = ?, location_type = ?, cuisine_type = ?, mall_id = ?, link = ?, logo_url = ?, updated_at = ? WHERE id = ?',
+      'UPDATE restaurants SET name = ?, description = ?, address = ?, phone = ?, location_type = ?, cuisine_type = ?, city_id = ?, mall_id = ?, link = ?, logo_url = ?, updated_at = ? WHERE id = ?',
       [
         restaurant.name,
         restaurant.description,
@@ -105,6 +109,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
         restaurant.phone,
         restaurant.locationType,
         restaurant.cuisineType,
+        restaurant.cityId,
         restaurant.mallId ?? null,
         restaurant.link ?? null,
         restaurant.logoUrl,

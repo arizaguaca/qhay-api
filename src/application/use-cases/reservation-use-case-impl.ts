@@ -9,6 +9,12 @@ export class ReservationUseCaseImpl {
     if (!reservation.id) {
       reservation.id = uuidv4();
     }
+    
+    // Convert string date to Date object if needed
+    if (typeof reservation.reservationDate === 'string') {
+      reservation.reservationDate = new Date(reservation.reservationDate);
+    }
+
     reservation.createdAt = new Date();
     reservation.updatedAt = new Date();
 

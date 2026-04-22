@@ -12,4 +12,14 @@ export class MallController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async fetchByCity(req: Request, res: Response): Promise<void> {
+    try {
+      const { cityId } = req.params;
+      const malls = await this.mallUseCase.fetchByCity(cityId);
+      res.json(malls);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

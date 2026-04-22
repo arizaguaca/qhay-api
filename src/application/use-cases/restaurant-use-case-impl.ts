@@ -17,6 +17,9 @@ export class RestaurantUseCaseImpl {
     if (!restaurant.cuisineType?.trim()) {
       throw new Error('cuisineType is required');
     }
+    if (!restaurant.cityId?.trim()) {
+      throw new Error('cityId is required');
+    }
     if (restaurant.locationType === 'Food Court' && !restaurant.mallId?.trim()) {
       throw new Error('mall is required when locationType is Food Court');
     }

@@ -15,6 +15,7 @@ import { MySQLVerificationRepository } from './infrastructure/database/mysql-ver
 import { MySQLCategoryRepository } from './infrastructure/database/mysql-category-repository';
 import { MySQLMallRepository } from './infrastructure/database/mysql-mall-repository';
 import { MySQLCuisineTypeRepository } from './infrastructure/database/mysql-cuisine-type-repository';
+import { MySQLCityRepository } from './infrastructure/database/mysql-city-repository';
 import { RestaurantUseCaseImpl } from './application/use-cases/restaurant-use-case-impl';
 import { UserUseCaseImpl } from './application/use-cases/user-use-case-impl';
 import { CustomerUseCaseImpl } from './application/use-cases/customer-use-case-impl';
@@ -26,6 +27,7 @@ import { ReservationUseCaseImpl } from './application/use-cases/reservation-use-
 import { VerificationUseCaseImpl } from './application/use-cases/verification-use-case-impl';
 import { MallUseCase } from './application/use-cases/mall-use-case';
 import { CuisineTypeUseCase } from './application/use-cases/cuisine-type-use-case';
+import { CityUseCase } from './application/use-cases/city-use-case';
 import { UserRegistrationUseCase } from './application/use-cases/registration/user-registration-use-case';
 import { CustomerRegistrationUseCase } from './application/use-cases/registration/customer-registration-use-case';
 import { RestaurantController } from './infrastructure/web/controllers/restaurant-controller';
@@ -39,6 +41,7 @@ import { ReservationController } from './infrastructure/web/controllers/reservat
 import { VerificationController } from './infrastructure/web/controllers/verification-controller';
 import { MallController } from './infrastructure/web/controllers/mall-controller';
 import { CuisineTypeController } from './infrastructure/web/controllers/cuisine-type-controller';
+import { CityController } from './infrastructure/web/controllers/city-controller';
 import { createRestaurantRoutes } from './infrastructure/web/routes/restaurant-routes';
 import { createUserRoutes } from './infrastructure/web/routes/user-routes';
 import { createCustomerRoutes } from './infrastructure/web/routes/customer-routes';
@@ -50,6 +53,7 @@ import { createReservationRoutes } from './infrastructure/web/routes/reservation
 import { createVerificationRoutes } from './infrastructure/web/routes/verification-routes';
 import { createMallRoutes } from './infrastructure/web/routes/mall-routes';
 import { createCuisineTypeRoutes } from './infrastructure/web/routes/cuisine-type-routes';
+import { createCityRoutes } from './infrastructure/web/routes/city-routes';
 import { SMSNotification } from './infrastructure/notifications/sms-notification';
 import { WSPNotification } from './infrastructure/notifications/wsp-notification';
 import { EmailNotification } from './infrastructure/notifications/email-notification';
@@ -90,6 +94,7 @@ async function main() {
   const categoryRepo = new MySQLCategoryRepository(db);
   const mallRepo = new MySQLMallRepository(db);
   const cuisineTypeRepo = new MySQLCuisineTypeRepository(db);
+  const cityRepo = new MySQLCityRepository(db);
 
   // Setup Infrastructure
   const templateManager = new TemplateManager();
@@ -124,6 +129,7 @@ async function main() {
   const customerRegistrationUseCase = new CustomerRegistrationUseCase(customerUseCase, verificationUseCase);
   const mallUseCase = new MallUseCase(mallRepo);
   const cuisineTypeUseCase = new CuisineTypeUseCase(cuisineTypeRepo);
+  const cityUseCase = new CityUseCase(cityRepo);
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
@@ -137,6 +143,7 @@ async function main() {
   const verificationController = new VerificationController(verificationUseCase);
   const mallController = new MallController(mallUseCase);
   const cuisineTypeController = new CuisineTypeController(cuisineTypeUseCase);
+  const cityController = new CityController(cityUseCase);
 
   // Setup Routes
   const app = express();
@@ -175,6 +182,7 @@ async function main() {
   app.use(`${apiPrefix}/verification`, createVerificationRoutes(verificationController));
   app.use(`${apiPrefix}/malls`, createMallRoutes(mallController));
   app.use(`${apiPrefix}/cuisine-types`, createCuisineTypeRoutes(cuisineTypeController));
+  app.use(`${apiPrefix}/cities`, createCityRoutes(cityController));
 
   // Start Server
   const port = config.port;
