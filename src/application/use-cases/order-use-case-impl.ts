@@ -23,4 +23,20 @@ export class OrderUseCaseImpl {
   async getById(id: string): Promise<Order | null> {
     return await this.orderRepo.getById(id);
   }
+
+  async getByRestaurantId(restaurantId: string): Promise<Order[]> {
+    return await this.orderRepo.fetchByRestaurantId(restaurantId);
+  }
+
+  async getByCustomerId(customerId: string): Promise<Order[]> {
+    return await this.orderRepo.fetchByCustomerId(customerId);
+  }
+
+  async updateStatus(id: string, status: string): Promise<void> {
+    const validStatuses = ['pending', 'preparing', 'ready', 'delivered', 'paid', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Invalid status: ${status}. Valid statuses: ${validStatuses.join(', ')}`);
+    }
+    await this.orderRepo.updateStatus(id, status);
+  }
 }

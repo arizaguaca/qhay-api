@@ -27,4 +27,36 @@ export class OrderController {
       res.status(500).json({ error: (error as Error).message });
     }
   }
+
+  async fetch(req: Request, res: Response): Promise<void> {
+    try {
+      const { restaurant_id, customer_id } = req.query;
+      let orders: any[] = [];
+
+      if (restaurant_id) {
+        orders = await this.orderUseCase.getByRestaurantId(restaurant_id as string);
+      } else if (customer_id) {
+        orders = await this.orderUseCase.getByCustomerId(customer_id as string);
+      }
+
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  async updateStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      if (!status) {
+        res.status(400).json({ error: 'status is required' });
+        return;
+      }
+      await this.orderUseCase.updateStatus(id, status);
+      res.json({ message: 'Order status updated successfully' });
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
 }

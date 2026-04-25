@@ -2,6 +2,11 @@ import { Order, OrderItem } from '../../domain/entities/order';
 import { OrderRepository } from '../../domain/repositories/order-repository';
 import { MySQLConnection } from './mysql-connection';
 
+function toMySqlDateTime(value: Date | number): string {
+  const d = value instanceof Date ? value : new Date(value);
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 export class MySQLOrderRepository implements OrderRepository {
   constructor(private db: MySQLConnection) {}
 
@@ -16,8 +21,8 @@ export class MySQLOrderRepository implements OrderRepository {
         order.tableNumber,
         order.status,
         order.totalPrice,
-        order.createdAt.getTime(),
-        order.updatedAt.getTime(),
+        toMySqlDateTime(order.createdAt),
+        toMySqlDateTime(order.updatedAt),
       ]
     );
 
@@ -28,7 +33,7 @@ export class MySQLOrderRepository implements OrderRepository {
       }
       item.orderId = order.id;
       await conn.execute(
-        'INSERT INTO order_items (id, order_id, menu_item_id, name, quantity, price) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO order_items (id, order_id, menu_item_id, name, quantity, price, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           item.id,
           item.orderId,
@@ -36,6 +41,7 @@ export class MySQLOrderRepository implements OrderRepository {
           item.name || null,
           item.quantity,
           item.price,
+          item.notes || null,
         ]
       );
     }
@@ -56,6 +62,7 @@ export class MySQLOrderRepository implements OrderRepository {
       name: itemRow.name,
       quantity: itemRow.quantity,
       price: itemRow.price,
+      notes: itemRow.notes,
     }));
 
     return {
@@ -115,7 +122,7 @@ export class MySQLOrderRepository implements OrderRepository {
 
   async updateStatus(id: string, status: string): Promise<void> {
     const conn = this.db.getConnection();
-    await conn.execute('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?', [status, Date.now(), id]);
+    await conn.execute('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?', [status, toMySqlDateTime(new Date()), id]);
   }
 
   async update(order: Order): Promise<void> {
@@ -127,7 +134,7 @@ export class MySQLOrderRepository implements OrderRepository {
         order.tableNumber,
         order.status,
         order.totalPrice,
-        order.updatedAt.getTime(),
+        toMySqlDateTime(order.updatedAt),
         order.id,
       ]
     );
@@ -143,6 +150,7 @@ export class MySQLOrderRepository implements OrderRepository {
       name: itemRow.name,
       quantity: itemRow.quantity,
       price: itemRow.price,
+      notes: itemRow.notes,
     }));
   }
 }
