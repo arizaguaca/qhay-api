@@ -14,8 +14,8 @@ export class RestaurantUseCaseImpl {
     if (!restaurant.locationType?.trim()) {
       throw new Error('locationType is required');
     }
-    if (!restaurant.cuisineType?.trim()) {
-      throw new Error('cuisineType is required');
+    if (!restaurant.cuisineId?.trim()) {
+      throw new Error('cuisineId is required');
     }
     if (!restaurant.cityId?.trim()) {
       throw new Error('cityId is required');
@@ -56,8 +56,8 @@ export class RestaurantUseCaseImpl {
     if (restaurant.locationType !== undefined && !restaurant.locationType.trim()) {
       throw new Error('locationType is required');
     }
-    if (restaurant.cuisineType !== undefined && !restaurant.cuisineType.trim()) {
-      throw new Error('cuisineType is required');
+    if (restaurant.cuisineId !== undefined && !restaurant.cuisineId.trim()) {
+      throw new Error('cuisineId is required');
     }
 
     // Validación condicional para Food Court

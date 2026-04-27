@@ -15,8 +15,6 @@ export class MySQLConnection {
     try {
       this.connection = await mysql.createConnection(config);
     } catch (error: any) {
-      // If database doesn't exist (ER_BAD_DB_ERROR), we might want to catch it here
-      // but let's keep it simple and handle it in the initialization step.
       throw error;
     }
   }
@@ -28,29 +26,69 @@ export class MySQLConnection {
     database: string;
     port: number;
   }): Promise<void> {
-    // 1. Connect without database first
     const connection = await mysql.createConnection({
       host: config.host,
       user: config.user,
       password: config.password,
       port: config.port,
-      multipleStatements: true
+      multipleStatements: true,
     });
 
     try {
-      // 2. Create database if it doesn't exist
+      // 1. Create database if it doesn't exist
       await connection.query(`CREATE DATABASE IF NOT EXISTS \`${config.database}\`;`);
       await connection.query(`USE \`${config.database}\`;`);
 
-      // 3. Read and execute database.sql
+      // 2. Read database.sql
       const sqlPath = path.join(process.cwd(), 'database.sql');
-      if (fs.existsSync(sqlPath)) {
-        const sql = fs.readFileSync(sqlPath, 'utf8');
-        await connection.query('SET FOREIGN_KEY_CHECKS = 0;');
-        await connection.query(sql);
-        await connection.query('SET FOREIGN_KEY_CHECKS = 1;');
-        console.log('Database schema initialized successfully.');
+      if (!fs.existsSync(sqlPath)) {
+        console.log('No database.sql found, skipping schema initialization.');
+        return;
       }
+
+      const sql = fs.readFileSync(sqlPath, 'utf8');
+
+      // 3. Split into individual statements
+      const statements = sql
+        .split(';')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+      await connection.query('SET FOREIGN_KEY_CHECKS = 0;');
+
+      for (const stmt of statements) {
+        const upper = stmt.toUpperCase();
+
+        // CREATE TABLE IF NOT EXISTS are idempotent — always safe to run
+        if (upper.startsWith('CREATE TABLE')) {
+          await connection.query(stmt + ';');
+          continue;
+        }
+
+        // ALTER TABLE ADD CONSTRAINT — skip if constraint already exists
+        if (upper.startsWith('ALTER TABLE') && upper.includes('ADD CONSTRAINT')) {
+          const constraintMatch = stmt.match(/ADD\s+CONSTRAINT\s+(\w+)/i);
+          if (constraintMatch) {
+            const constraintName = constraintMatch[1];
+            const [rows] = await connection.query(
+              `SELECT COUNT(*) as cnt FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = ? AND CONSTRAINT_NAME = ?`,
+              [config.database, constraintName]
+            );
+            if ((rows as any[])[0].cnt > 0) {
+              // Constraint already exists, skip
+              continue;
+            }
+          }
+          await connection.query(stmt + ';');
+          continue;
+        }
+
+        // Any other statement (INSERT, etc.) — just run it
+        await connection.query(stmt + ';');
+      }
+
+      await connection.query('SET FOREIGN_KEY_CHECKS = 1;');
+      console.log('Database schema initialized successfully.');
     } catch (error) {
       console.error('Error initializing database:', error);
       throw error;

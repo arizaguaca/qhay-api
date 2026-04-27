@@ -16,6 +16,10 @@ import { MySQLCategoryRepository } from './infrastructure/database/mysql-categor
 import { MySQLMallRepository } from './infrastructure/database/mysql-mall-repository';
 import { MySQLCuisineTypeRepository } from './infrastructure/database/mysql-cuisine-type-repository';
 import { MySQLCityRepository } from './infrastructure/database/mysql-city-repository';
+import { MySQLOrderReviewRepository } from './infrastructure/database/mysql-order-review-repository';
+import { MySQLOrderStatusHistoryRepository } from './infrastructure/database/mysql-order-status-history-repository';
+import { MySQLCustomerFavoriteRepository } from './infrastructure/database/mysql-customer-favorite-repository';
+import { MySQLNotificationSentLogRepository } from './infrastructure/database/mysql-notification-sent-log-repository';
 import { RestaurantUseCaseImpl } from './application/use-cases/restaurant-use-case-impl';
 import { UserUseCaseImpl } from './application/use-cases/user-use-case-impl';
 import { CustomerUseCaseImpl } from './application/use-cases/customer-use-case-impl';
@@ -28,6 +32,8 @@ import { VerificationUseCaseImpl } from './application/use-cases/verification-us
 import { MallUseCase } from './application/use-cases/mall-use-case';
 import { CuisineTypeUseCase } from './application/use-cases/cuisine-type-use-case';
 import { CityUseCase } from './application/use-cases/city-use-case';
+import { OrderReviewUseCaseImpl } from './application/use-cases/order-review-use-case-impl';
+import { CustomerFavoriteUseCaseImpl } from './application/use-cases/customer-favorite-use-case-impl';
 import { UserRegistrationUseCase } from './application/use-cases/registration/user-registration-use-case';
 import { CustomerRegistrationUseCase } from './application/use-cases/registration/customer-registration-use-case';
 import { RestaurantController } from './infrastructure/web/controllers/restaurant-controller';
@@ -42,6 +48,8 @@ import { VerificationController } from './infrastructure/web/controllers/verific
 import { MallController } from './infrastructure/web/controllers/mall-controller';
 import { CuisineTypeController } from './infrastructure/web/controllers/cuisine-type-controller';
 import { CityController } from './infrastructure/web/controllers/city-controller';
+import { OrderReviewController } from './infrastructure/web/controllers/order-review-controller';
+import { CustomerFavoriteController } from './infrastructure/web/controllers/customer-favorite-controller';
 import { createRestaurantRoutes } from './infrastructure/web/routes/restaurant-routes';
 import { createUserRoutes } from './infrastructure/web/routes/user-routes';
 import { createCustomerRoutes } from './infrastructure/web/routes/customer-routes';
@@ -54,6 +62,8 @@ import { createVerificationRoutes } from './infrastructure/web/routes/verificati
 import { createMallRoutes } from './infrastructure/web/routes/mall-routes';
 import { createCuisineTypeRoutes } from './infrastructure/web/routes/cuisine-type-routes';
 import { createCityRoutes } from './infrastructure/web/routes/city-routes';
+import { createOrderReviewRoutes } from './infrastructure/web/routes/order-review-routes';
+import { createCustomerFavoriteRoutes } from './infrastructure/web/routes/customer-favorite-routes';
 import { SMSNotification } from './infrastructure/notifications/sms-notification';
 import { WSPNotification } from './infrastructure/notifications/wsp-notification';
 import { EmailNotification } from './infrastructure/notifications/email-notification';
@@ -95,6 +105,10 @@ async function main() {
   const mallRepo = new MySQLMallRepository(db);
   const cuisineTypeRepo = new MySQLCuisineTypeRepository(db);
   const cityRepo = new MySQLCityRepository(db);
+  const orderReviewRepo = new MySQLOrderReviewRepository(db);
+  const orderStatusHistoryRepo = new MySQLOrderStatusHistoryRepository(db);
+  const customerFavoriteRepo = new MySQLCustomerFavoriteRepository(db);
+  const notificationSentLogRepo = new MySQLNotificationSentLogRepository(db);
 
   // Setup Infrastructure
   const templateManager = new TemplateManager();
@@ -130,6 +144,8 @@ async function main() {
   const mallUseCase = new MallUseCase(mallRepo);
   const cuisineTypeUseCase = new CuisineTypeUseCase(cuisineTypeRepo);
   const cityUseCase = new CityUseCase(cityRepo);
+  const orderReviewUseCase = new OrderReviewUseCaseImpl(orderReviewRepo);
+  const customerFavoriteUseCase = new CustomerFavoriteUseCaseImpl(customerFavoriteRepo);
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
@@ -144,6 +160,8 @@ async function main() {
   const mallController = new MallController(mallUseCase);
   const cuisineTypeController = new CuisineTypeController(cuisineTypeUseCase);
   const cityController = new CityController(cityUseCase);
+  const orderReviewController = new OrderReviewController(orderReviewUseCase);
+  const customerFavoriteController = new CustomerFavoriteController(customerFavoriteUseCase);
 
   // Setup Routes
   const app = express();
@@ -183,6 +201,8 @@ async function main() {
   app.use(`${apiPrefix}/malls`, createMallRoutes(mallController));
   app.use(`${apiPrefix}/cuisine-types`, createCuisineTypeRoutes(cuisineTypeController));
   app.use(`${apiPrefix}/cities`, createCityRoutes(cityController));
+  app.use(`${apiPrefix}/order-reviews`, createOrderReviewRoutes(orderReviewController));
+  app.use(`${apiPrefix}/favorites`, createCustomerFavoriteRoutes(customerFavoriteController));
 
   // Start Server
   const port = config.port;

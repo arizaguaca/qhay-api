@@ -1,12 +1,15 @@
 export enum Role {
   OWNER = 'owner',
   ADMIN = 'admin',
-  STAFF = 'staff'
+  WAITER = 'waiter',
+  MANAGER = 'manager',
+  COOK = 'cook',
+  CASHIER = 'cashier',
 }
 
 export interface User {
   id: string;
-  name: string;
+  fullName: string;
   email: string;
   phone: string;
   password: string;

@@ -38,10 +38,10 @@ export class ReservationController {
     }
   }
 
-  async fetchByUserId(req: Request, res: Response): Promise<void> {
+  async fetchByCustomerId(req: Request, res: Response): Promise<void> {
     try {
-      const { userId } = req.params;
-      const reservations = await this.reservationUseCase.fetchByUserId(userId);
+      const { customerId } = req.params;
+      const reservations = await this.reservationUseCase.fetchByCustomerId(customerId);
       res.json(reservations);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });

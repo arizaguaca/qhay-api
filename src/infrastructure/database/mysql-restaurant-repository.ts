@@ -13,7 +13,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
   async create(restaurant: Restaurant): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO restaurants (id, name, description, address, phone, location_type, cuisine_type, city_id, mall_id, link, owner_id, logo_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO restaurants (id, name, description, address, phone, location_type, cuisine_id, city_id, mall_id, link, user_id, logo_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         restaurant.id,
         restaurant.name,
@@ -21,11 +21,11 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
         restaurant.address,
         restaurant.phone,
         restaurant.locationType,
-        restaurant.cuisineType,
+        restaurant.cuisineId,
         restaurant.cityId,
         restaurant.mallId ?? null,
         restaurant.link ?? null,
-        restaurant.ownerId,
+        restaurant.userId,
         restaurant.logoUrl,
         toMySqlDateTime(restaurant.createdAt),
         toMySqlDateTime(restaurant.updatedAt),
@@ -45,11 +45,11 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       address: row.address,
       phone: row.phone,
       locationType: row.location_type ?? '',
-      cuisineType: row.cuisine_type ?? '',
+      cuisineId: row.cuisine_id ?? '',
       cityId: row.city_id,
       mallId: row.mall_id ?? null,
       link: row.link ?? null,
-      ownerId: row.owner_id,
+      userId: row.user_id,
       logoUrl: row.logo_url,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -66,11 +66,11 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       address: row.address,
       phone: row.phone,
       locationType: row.location_type ?? '',
-      cuisineType: row.cuisine_type ?? '',
+      cuisineId: row.cuisine_id ?? '',
       cityId: row.city_id,
       mallId: row.mall_id ?? null,
       link: row.link ?? null,
-      ownerId: row.owner_id,
+      userId: row.user_id,
       logoUrl: row.logo_url,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -79,7 +79,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
 
   async getByOwnerId(ownerId: string): Promise<Restaurant[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM restaurants WHERE owner_id = ?', [ownerId]);
+    const [rows] = await conn.execute('SELECT * FROM restaurants WHERE user_id = ?', [ownerId]);
     return (rows as any[]).map(row => ({
       id: row.id,
       name: row.name,
@@ -87,11 +87,11 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
       address: row.address,
       phone: row.phone,
       locationType: row.location_type ?? '',
-      cuisineType: row.cuisine_type ?? '',
+      cuisineId: row.cuisine_id ?? '',
       cityId: row.city_id,
       mallId: row.mall_id ?? null,
       link: row.link ?? null,
-      ownerId: row.owner_id,
+      userId: row.user_id,
       logoUrl: row.logo_url,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -101,14 +101,14 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
   async update(restaurant: Restaurant): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'UPDATE restaurants SET name = ?, description = ?, address = ?, phone = ?, location_type = ?, cuisine_type = ?, city_id = ?, mall_id = ?, link = ?, logo_url = ?, updated_at = ? WHERE id = ?',
+      'UPDATE restaurants SET name = ?, description = ?, address = ?, phone = ?, location_type = ?, cuisine_id = ?, city_id = ?, mall_id = ?, link = ?, logo_url = ?, updated_at = ? WHERE id = ?',
       [
         restaurant.name,
         restaurant.description,
         restaurant.address,
         restaurant.phone,
         restaurant.locationType,
-        restaurant.cuisineType,
+        restaurant.cuisineId,
         restaurant.cityId,
         restaurant.mallId ?? null,
         restaurant.link ?? null,

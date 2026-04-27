@@ -15,9 +15,11 @@ CREATE TABLE IF NOT EXISTS malls (
 
 CREATE TABLE IF NOT EXISTS customers (
     id CHAR(36) PRIMARY KEY,
-    name VARCHAR(255),
+    full_name VARCHAR(255),
     phone VARCHAR(20) NOT NULL UNIQUE,
     is_active BOOLEAN DEFAULT TRUE,
+    allow_promotions BOOLEAN NOT NULL DEFAULT FALSE,
+    promotions_updated_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL
@@ -66,11 +68,11 @@ CREATE TABLE IF NOT EXISTS operating_hours (
 
 CREATE TABLE IF NOT EXISTS users (
     id CHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     phone VARCHAR(20),
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL,
+    role VARCHAR(20) NOT NULL,
     restaurant_id CHAR(36),
     is_verified BOOLEAN DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -87,7 +89,7 @@ ADD CONSTRAINT fk_restauran_user FOREIGN KEY (user_id) REFERENCES users(id) ON D
 
 CREATE TABLE IF NOT EXISTS verification_codes (
     id CHAR(36) PRIMARY KEY,
-    customer_id CHAR(36) NOT NULL,
+    entity_id CHAR(36) NOT NULL,
     entity_type VARCHAR(20) NOT NULL,
     contact VARCHAR(255) NOT NULL,
     channel VARCHAR(20) NOT NULL,
@@ -97,9 +99,6 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-
-ALTER TABLE verification_codes 
-ADD CONSTRAINT fk_verification_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE;
 
 CREATE TABLE IF NOT EXISTS menu_categories (
     id CHAR(36) PRIMARY KEY,
@@ -195,13 +194,23 @@ CREATE TABLE IF NOT EXISTS orders (
     FOREIGN KEY (customer_id) REFERENCES customers(id)
 );
 
+CREATE TABLE IF NOT EXISTS order_status_history(
+    id CHAR(36) PRIMARY KEY,
+    order_id CHAR(36) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    changed_by_user_id CHAR(36),
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (changed_by_user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS order_items (
     id CHAR(36) PRIMARY KEY,
     order_id CHAR(36) NOT NULL,
     menu_item_id CHAR(36) NOT NULL,
     name VARCHAR(255),
     quantity INT NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
+    unit_price DECIMAL(10, 2) NOT NULL,
     notes TEXT,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
@@ -225,11 +234,34 @@ CREATE TABLE IF NOT EXISTS order_reviews (
     customer_id CHAR(36) NOT NULL,
     overall_rating TINYINT NOT NULL CHECK (overall_rating >= 1 AND overall_rating <= 5),
     comment TEXT,
+    wants_contact BOOLEAN NOT NULL DEFAULT FALSE,
+    contact_status ENUM('not_required', 'pending', 'contacted', 'resolved') DEFAULT 'not_required',
+    resolution_comment TEXT NULL,
     service_rating TINYINT NULL CHECK (service_rating >= 1 AND service_rating <= 5),
     food_rating TINYINT NULL CHECK (food_rating >= 1 AND food_rating <= 5),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id),
     FOREIGN KEY (restaurant_id) REFERENCES restaurants(id),
     FOREIGN KEY (customer_id) REFERENCES customers(id)
-) ;
+);
+
+CREATE TABLE IF NOT EXISTS customer_favorites (
+    id CHAR(36) PRIMARY KEY,
+    customer_id CHAR(36) NOT NULL,
+    menu_item_id CHAR(36) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_favorite (customer_id, menu_item_id),
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notifications_sent_log (
+    id CHAR(36) PRIMARY KEY,
+    customer_id CHAR(36) NOT NULL,
+    restaurant_id CHAR(36) NOT NULL,
+    notification_type VARCHAR(50),
+    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id),
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
+);

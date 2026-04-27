@@ -1,4 +1,4 @@
-import { Order, OrderItem } from '../../domain/entities/order';
+import { Order, OrderItem, OrderItemModifier } from '../../domain/entities/order';
 import { OrderRepository } from '../../domain/repositories/order-repository';
 import { MySQLConnection } from './mysql-connection';
 
@@ -13,14 +13,17 @@ export class MySQLOrderRepository implements OrderRepository {
   async create(order: Order): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO orders (id, restaurant_id, customer_id, table_number, status, total_price, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO orders (id, restaurant_id, customer_id, table_number, status, cancelled_by, total_amount, cancellation_reason, cancelled_by_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         order.id,
         order.restaurantId,
         order.customerId,
         order.tableNumber,
         order.status,
-        order.totalPrice,
+        order.cancelledBy ?? null,
+        order.totalAmount,
+        order.cancellationReason ?? null,
+        order.cancelledByUserId ?? null,
         toMySqlDateTime(order.createdAt),
         toMySqlDateTime(order.updatedAt),
       ]
@@ -33,17 +36,37 @@ export class MySQLOrderRepository implements OrderRepository {
       }
       item.orderId = order.id;
       await conn.execute(
-        'INSERT INTO order_items (id, order_id, menu_item_id, name, quantity, price, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO order_items (id, order_id, menu_item_id, name, quantity, unit_price, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           item.id,
           item.orderId,
           item.menuItemId,
           item.name || null,
           item.quantity,
-          item.price,
+          item.unitPrice,
           item.notes || null,
         ]
       );
+
+      // Insert order item modifiers
+      if (item.modifiers && item.modifiers.length > 0) {
+        for (const modifier of item.modifiers) {
+          if (!modifier.id) {
+            modifier.id = require('uuid').v4();
+          }
+          await conn.execute(
+            'INSERT INTO order_item_modifiers (id, order_item_id, product_option_id, name, price, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            [
+              modifier.id,
+              item.id,
+              modifier.productOptionId,
+              modifier.name,
+              modifier.price,
+              toMySqlDateTime(modifier.createdAt || new Date()),
+            ]
+          );
+        }
+      }
     }
   }
 
@@ -53,17 +76,8 @@ export class MySQLOrderRepository implements OrderRepository {
     if ((rows as any[]).length === 0) return null;
     const row = (rows as any[])[0];
 
-    // Get order items
-    const [itemRows] = await conn.execute('SELECT * FROM order_items WHERE order_id = ?', [id]);
-    const items: OrderItem[] = (itemRows as any[]).map(itemRow => ({
-      id: itemRow.id,
-      orderId: itemRow.order_id,
-      menuItemId: itemRow.menu_item_id,
-      name: itemRow.name,
-      quantity: itemRow.quantity,
-      price: itemRow.price,
-      notes: itemRow.notes,
-    }));
+    // Get order items with modifiers
+    const items = await this.getOrderItems(id);
 
     return {
       id: row.id,
@@ -72,7 +86,10 @@ export class MySQLOrderRepository implements OrderRepository {
       tableNumber: row.table_number,
       items,
       status: row.status,
-      totalPrice: row.total_price,
+      cancelledBy: row.cancelled_by ?? null,
+      totalAmount: row.total_amount,
+      cancellationReason: row.cancellation_reason ?? null,
+      cancelledByUserId: row.cancelled_by_user_id ?? null,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     };
@@ -91,7 +108,10 @@ export class MySQLOrderRepository implements OrderRepository {
         tableNumber: row.table_number,
         items,
         status: row.status,
-        totalPrice: row.total_price,
+        cancelledBy: row.cancelled_by ?? null,
+        totalAmount: row.total_amount,
+        cancellationReason: row.cancellation_reason ?? null,
+        cancelledByUserId: row.cancelled_by_user_id ?? null,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
       });
@@ -112,7 +132,10 @@ export class MySQLOrderRepository implements OrderRepository {
         tableNumber: row.table_number,
         items,
         status: row.status,
-        totalPrice: row.total_price,
+        cancelledBy: row.cancelled_by ?? null,
+        totalAmount: row.total_amount,
+        cancellationReason: row.cancellation_reason ?? null,
+        cancelledByUserId: row.cancelled_by_user_id ?? null,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
       });
@@ -129,11 +152,14 @@ export class MySQLOrderRepository implements OrderRepository {
     const conn = this.db.getConnection();
     order.updatedAt = new Date();
     await conn.execute(
-      'UPDATE orders SET table_number = ?, status = ?, total_price = ?, updated_at = ? WHERE id = ?',
+      'UPDATE orders SET table_number = ?, status = ?, cancelled_by = ?, total_amount = ?, cancellation_reason = ?, cancelled_by_user_id = ?, updated_at = ? WHERE id = ?',
       [
         order.tableNumber,
         order.status,
-        order.totalPrice,
+        order.cancelledBy ?? null,
+        order.totalAmount,
+        order.cancellationReason ?? null,
+        order.cancelledByUserId ?? null,
         toMySqlDateTime(order.updatedAt),
         order.id,
       ]
@@ -143,14 +169,32 @@ export class MySQLOrderRepository implements OrderRepository {
   private async getOrderItems(orderId: string): Promise<OrderItem[]> {
     const conn = this.db.getConnection();
     const [itemRows] = await conn.execute('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
-    return (itemRows as any[]).map(itemRow => ({
-      id: itemRow.id,
-      orderId: itemRow.order_id,
-      menuItemId: itemRow.menu_item_id,
-      name: itemRow.name,
-      quantity: itemRow.quantity,
-      price: itemRow.price,
-      notes: itemRow.notes,
-    }));
+    const items: OrderItem[] = [];
+
+    for (const itemRow of itemRows as any[]) {
+      // Get modifiers for this order item
+      const [modRows] = await conn.execute('SELECT * FROM order_item_modifiers WHERE order_item_id = ?', [itemRow.id]);
+      const modifiers: OrderItemModifier[] = (modRows as any[]).map(modRow => ({
+        id: modRow.id,
+        orderItemId: modRow.order_item_id,
+        productOptionId: modRow.product_option_id,
+        name: modRow.name,
+        price: modRow.price,
+        createdAt: new Date(modRow.created_at),
+      }));
+
+      items.push({
+        id: itemRow.id,
+        orderId: itemRow.order_id,
+        menuItemId: itemRow.menu_item_id,
+        name: itemRow.name,
+        quantity: itemRow.quantity,
+        unitPrice: itemRow.unit_price,
+        notes: itemRow.notes,
+        modifiers,
+      });
+    }
+
+    return items;
   }
 }

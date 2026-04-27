@@ -1,20 +1,21 @@
 import { Request, Response } from 'express';
 import { UserUseCaseImpl } from '../../../application/use-cases/user-use-case-impl';
 import { UserRegistrationUseCase } from '../../../application/use-cases/registration/user-registration-use-case';
+import { Role } from '../../../domain/entities/user';
+import { Channel } from '../../../domain/entities/verification-code';
 
 export class UserController {
   constructor(
     private userUseCase: UserUseCaseImpl,
     private userRegistrationUseCase: UserRegistrationUseCase
-  ) {}
+  ) { }
 
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const { channel, ...user } = req.body;
-      if (!channel) {
-        throw new Error('Channel is required (email, sms or whatsapp)');
-      }
-      await this.userRegistrationUseCase.execute(user, channel);
+      const { channel = Channel.EMAIL, ...userData } = req.body;
+      const user = { ...userData, role: userData.role || Role.OWNER };
+
+      await this.userRegistrationUseCase.execute(user, channel as Channel);
       res.status(201).json({ message: 'User created successfully. Verification code sent.' });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });

@@ -8,7 +8,7 @@ export class MySQLCategoryRepository implements CategoryRepository {
   async create(category: Category): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO categories (id, restaurant_id, name, is_custom) VALUES (?, ?, ?, ?)',
+      'INSERT INTO menu_categories (id, restaurant_id, name, is_custom) VALUES (?, ?, ?, ?)',
       [category.id, category.restaurantId ?? null, category.name, category.isCustom ? 1 : 0]
     );
   }
@@ -16,7 +16,7 @@ export class MySQLCategoryRepository implements CategoryRepository {
   async fetchByRestaurantId(restaurantId: string): Promise<Category[]> {
     const conn = this.db.getConnection();
     const [rows] = await conn.execute(
-      'SELECT * FROM categories WHERE restaurant_id = ? OR restaurant_id IS NULL',
+      'SELECT * FROM menu_categories WHERE restaurant_id = ? OR restaurant_id IS NULL',
       [restaurantId]
     );
     return (rows as any[]).map(row => ({
@@ -29,7 +29,7 @@ export class MySQLCategoryRepository implements CategoryRepository {
 
   async getById(id: string): Promise<Category | null> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM categories WHERE id = ?', [id]);
+    const [rows] = await conn.execute('SELECT * FROM menu_categories WHERE id = ?', [id]);
     if ((rows as any[]).length === 0) return null;
     const row = (rows as any[])[0];
     return {
@@ -42,6 +42,6 @@ export class MySQLCategoryRepository implements CategoryRepository {
 
   async delete(id: string): Promise<void> {
     const conn = this.db.getConnection();
-    await conn.execute('DELETE FROM categories WHERE id = ?', [id]);
+    await conn.execute('DELETE FROM menu_categories WHERE id = ?', [id]);
   }
 }

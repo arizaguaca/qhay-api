@@ -28,21 +28,14 @@ export class MySQLVerificationRepository implements VerificationRepository {
     const conn = this.db.getConnection();
     await conn.execute(
       'UPDATE verification_codes SET verified = ?, updated_at = ? WHERE id = ?',
-      [
-        verification.verified ? 1 : 0,
-        this.formatDate(verification.updatedAt),
-        verification.id
-      ]
+      [verification.verified ? 1 : 0, this.formatDate(verification.updatedAt), verification.id]
     );
   }
-
 
   private formatDate(date: Date): string {
     const pad = (n: number) => n.toString().padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   }
-
-
 
   async getLatestByContact(contact: string): Promise<VerificationCode | null> {
     const conn = this.db.getConnection();
@@ -50,7 +43,6 @@ export class MySQLVerificationRepository implements VerificationRepository {
       'SELECT * FROM verification_codes WHERE contact = ? ORDER BY created_at DESC LIMIT 1',
       [contact]
     )) as [any[], any];
-
     if (rows.length === 0) return null;
     const row = rows[0];
     return {

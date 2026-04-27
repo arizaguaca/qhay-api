@@ -1,6 +1,6 @@
 export interface CuisineType {
   id: string;
-  ownerId?: string;
+  userId?: string;
   name: string;
   isCustom: boolean;
 }

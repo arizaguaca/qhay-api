@@ -13,12 +13,12 @@ export class CuisineTypeUseCase {
     return await this.cuisineTypeRepo.fetchByOwnerId(ownerId);
   }
 
-  async create(data: { name: string; ownerId?: string }): Promise<CuisineType> {
+  async create(data: { name: string; userId?: string }): Promise<CuisineType> {
     const cuisineType: CuisineType = {
       id: uuidv4(),
       name: data.name,
-      ownerId: data.ownerId,
-      isCustom: data.ownerId ? true : false,
+      userId: data.userId,
+      isCustom: data.userId ? true : false,
     };
     await this.cuisineTypeRepo.create(cuisineType);
     return cuisineType;

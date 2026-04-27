@@ -25,12 +25,12 @@ export class CuisineTypeController {
 
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const { name, ownerId } = req.body;
+      const { name, userId } = req.body;
       if (!name) {
         res.status(400).json({ error: 'Name is required' });
         return;
       }
-      const cuisineType = await this.cuisineTypeUseCase.create({ name, ownerId });
+      const cuisineType = await this.cuisineTypeUseCase.create({ name, userId });
       res.status(201).json(cuisineType);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

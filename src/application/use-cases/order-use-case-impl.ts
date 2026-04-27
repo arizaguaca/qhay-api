@@ -12,9 +12,9 @@ export class OrderUseCaseImpl {
     order.createdAt = new Date();
     order.updatedAt = new Date();
 
-    // Calculate total price if not provided
-    if (!order.totalPrice) {
-      order.totalPrice = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // Calculate total amount if not provided
+    if (!order.totalAmount) {
+      order.totalAmount = order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
     }
 
     await this.orderRepo.create(order);

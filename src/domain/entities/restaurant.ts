@@ -5,11 +5,11 @@ export interface Restaurant {
   address: string;
   phone: string;
   locationType: string;
-  cuisineType: string;
+  cuisineId: string;
   cityId: string;
   mallId?: string | null;
   link?: string | null;
-  ownerId: string;
+  userId: string;
   logoUrl: string;
   createdAt: Date;
   updatedAt: Date;

@@ -8,17 +8,17 @@ export class MySQLCuisineTypeRepository implements CuisineTypeRepository {
   async create(cuisineType: CuisineType): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO cuisine_types (id, owner_id, name, is_custom) VALUES (?, ?, ?, ?)',
-      [cuisineType.id, cuisineType.ownerId ?? null, cuisineType.name, cuisineType.isCustom ? 1 : 0]
+      'INSERT INTO cuisines (id, user_id, name, is_custom) VALUES (?, ?, ?, ?)',
+      [cuisineType.id, cuisineType.userId ?? null, cuisineType.name, cuisineType.isCustom ? 1 : 0]
     );
   }
 
   async fetchAll(): Promise<CuisineType[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM cuisine_types WHERE owner_id IS NULL');
+    const [rows] = await conn.execute('SELECT * FROM cuisines WHERE user_id IS NULL');
     return (rows as any[]).map(row => ({
       id: row.id,
-      ownerId: row.owner_id,
+      userId: row.user_id,
       name: row.name,
       isCustom: row.is_custom === 1,
     }));
@@ -27,12 +27,12 @@ export class MySQLCuisineTypeRepository implements CuisineTypeRepository {
   async fetchByOwnerId(ownerId: string): Promise<CuisineType[]> {
     const conn = this.db.getConnection();
     const [rows] = await conn.execute(
-      'SELECT * FROM cuisine_types WHERE owner_id = ? OR owner_id IS NULL',
+      'SELECT * FROM cuisines WHERE user_id = ? OR user_id IS NULL',
       [ownerId]
     );
     return (rows as any[]).map(row => ({
       id: row.id,
-      ownerId: row.owner_id,
+      userId: row.user_id,
       name: row.name,
       isCustom: row.is_custom === 1,
     }));
@@ -40,12 +40,12 @@ export class MySQLCuisineTypeRepository implements CuisineTypeRepository {
 
   async getById(id: string): Promise<CuisineType | null> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM cuisine_types WHERE id = ?', [id]);
+    const [rows] = await conn.execute('SELECT * FROM cuisines WHERE id = ?', [id]);
     if ((rows as any[]).length === 0) return null;
     const row = (rows as any[])[0];
     return {
       id: row.id,
-      ownerId: row.owner_id,
+      userId: row.user_id,
       name: row.name,
       isCustom: row.is_custom === 1,
     };
@@ -53,6 +53,6 @@ export class MySQLCuisineTypeRepository implements CuisineTypeRepository {
 
   async delete(id: string): Promise<void> {
     const conn = this.db.getConnection();
-    await conn.execute('DELETE FROM cuisine_types WHERE id = ?', [id]);
+    await conn.execute('DELETE FROM cuisines WHERE id = ?', [id]);
   }
 }

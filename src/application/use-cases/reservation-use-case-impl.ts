@@ -29,8 +29,8 @@ export class ReservationUseCaseImpl {
     return await this.reservationRepo.fetchByRestaurantId(restaurantId);
   }
 
-  async fetchByUserId(userId: string): Promise<Reservation[]> {
-    return await this.reservationRepo.fetchByUserId(userId);
+  async fetchByCustomerId(customerId: string): Promise<Reservation[]> {
+    return await this.reservationRepo.fetchByCustomerId(customerId);
   }
 
   async updateStatus(id: string, status: string): Promise<void> {
