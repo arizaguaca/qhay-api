@@ -32,7 +32,7 @@ export class MySQLMenuRepository implements MenuRepository {
 
   async getById(id: string): Promise<MenuItem | null> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM menu_items WHERE id = ?', [id]);
+    const [rows] = await conn.execute('SELECT * FROM menu_items WHERE id = ? AND deleted_at IS NULL', [id]);
     if ((rows as any[]).length === 0) return null;
     const row = (rows as any[])[0];
     const groups = await this.getModifiersByItem(id);
@@ -54,7 +54,7 @@ export class MySQLMenuRepository implements MenuRepository {
 
   async fetchByRestaurantId(restaurantId: string): Promise<MenuItem[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM menu_items WHERE restaurant_id = ?', [restaurantId]);
+    const [rows] = await conn.execute('SELECT * FROM menu_items WHERE restaurant_id = ? AND deleted_at IS NULL', [restaurantId]);
     const items: MenuItem[] = (rows as any[]).map(row => ({
       id: row.id,
       restaurantId: row.restaurant_id,
@@ -78,8 +78,11 @@ export class MySQLMenuRepository implements MenuRepository {
 
   async update(item: MenuItem): Promise<void> {
     const conn = this.db.getConnection();
+    
+    // Si imageUrl no viene en el objeto (no se subió archivo nuevo), 
+    // mantenemos la que ya existe en la base de datos usando COALESCE
     await conn.execute(
-      'UPDATE menu_items SET menu_category_id = ?, name = ?, description = ?, price = ?, prep_time = ?, image_url = ?, is_available = ?, updated_at = ? WHERE id = ?',
+      'UPDATE menu_items SET menu_category_id = ?, name = ?, description = ?, price = ?, prep_time = ?, image_url = COALESCE(?, image_url), is_available = ?, updated_at = ? WHERE id = ?',
       [
         item.categoryId || null,
         item.name,
@@ -164,6 +167,6 @@ export class MySQLMenuRepository implements MenuRepository {
 
   async delete(id: string): Promise<void> {
     const conn = this.db.getConnection();
-    await conn.execute('DELETE FROM menu_items WHERE id = ?', [id]);
+    await conn.execute('UPDATE menu_items SET deleted_at = NOW() WHERE id = ?', [id]);
   }
 }

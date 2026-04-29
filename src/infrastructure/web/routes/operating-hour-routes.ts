@@ -5,6 +5,7 @@ export function createOperatingHourRoutes(operatingHourController: OperatingHour
   const router = Router();
 
   router.post('/:restaurantId/hours', operatingHourController.saveHours.bind(operatingHourController));
+  router.put('/:restaurantId/hours', operatingHourController.saveHours.bind(operatingHourController));
   router.get('/:restaurantId/hours', operatingHourController.getByRestaurantId.bind(operatingHourController));
 
   return router;

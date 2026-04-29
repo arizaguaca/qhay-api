@@ -124,7 +124,7 @@ async function main() {
   const customerUseCase = new CustomerUseCaseImpl(customerRepo);
   const menuUseCase = new MenuUseCaseImpl(menuRepo, categoryRepo);
   const operatingHourUseCase = new OperatingHourUseCaseImpl(operatingHourRepo);
-  const orderUseCase = new OrderUseCaseImpl(orderRepo);
+  const orderUseCase = new OrderUseCaseImpl(orderRepo, orderStatusHistoryRepo);
   const qrCodeUseCase = new QRCodeUseCaseImpl(qrCodeRepo);
   const reservationUseCase = new ReservationUseCaseImpl(reservationRepo);
   const verificationStrategies = [

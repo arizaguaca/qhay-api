@@ -35,7 +35,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
 
   async getById(id: string): Promise<Restaurant | null> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM restaurants WHERE id = ?', [id]);
+    const [rows] = await conn.execute('SELECT * FROM restaurants WHERE id = ? AND deleted_at IS NULL', [id]);
     if ((rows as any[]).length === 0) return null;
     const row = (rows as any[])[0];
     return {
@@ -58,7 +58,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
 
   async fetch(): Promise<Restaurant[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM restaurants');
+    const [rows] = await conn.execute('SELECT * FROM restaurants WHERE deleted_at IS NULL');
     return (rows as any[]).map(row => ({
       id: row.id,
       name: row.name,
@@ -79,7 +79,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
 
   async getByOwnerId(ownerId: string): Promise<Restaurant[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM restaurants WHERE user_id = ?', [ownerId]);
+    const [rows] = await conn.execute('SELECT * FROM restaurants WHERE user_id = ? AND deleted_at IS NULL', [ownerId]);
     return (rows as any[]).map(row => ({
       id: row.id,
       name: row.name,
@@ -117,5 +117,10 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
         restaurant.id,
       ]
     );
+  }
+
+  async delete(id: string): Promise<void> {
+    const conn = this.db.getConnection();
+    await conn.execute('UPDATE restaurants SET deleted_at = NOW() WHERE id = ?', [id]);
   }
 }

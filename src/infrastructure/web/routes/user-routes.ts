@@ -6,11 +6,14 @@ export function createUserRoutes(userController: UserController): Router {
 
   router.post('/', userController.create.bind(userController));
   router.post('/login', userController.login.bind(userController));
+  router.post('/staff', userController.createStaff.bind(userController));
+  router.put('/staff/:id', userController.updateStaff.bind(userController));
+  router.delete('/staff/:id', userController.deleteStaff.bind(userController));
+  router.get('/staff/:restaurantId', userController.getStaffByRestaurant.bind(userController));
   router.get('/', userController.fetch.bind(userController));
   router.get('/:id', userController.getById.bind(userController));
   router.get('/email/:email', userController.getByEmail.bind(userController));
   router.get('/phone/:phone', userController.getByPhone.bind(userController));
-  router.get('/staff/:restaurantId', userController.getStaffByRestaurant.bind(userController));
   router.put('/:id', userController.update.bind(userController));
   router.delete('/:id', userController.delete.bind(userController));
 

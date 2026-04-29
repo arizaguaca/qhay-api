@@ -5,6 +5,10 @@ import { MySQLConnection } from './mysql-connection';
 export class MySQLOperatingHourRepository implements OperatingHourRepository {
   constructor(private db: MySQLConnection) {}
 
+  private toMySqlDateTime(date: Date): string {
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+  }
+
   async create(hour: OperatingHour): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
@@ -15,24 +19,23 @@ export class MySQLOperatingHourRepository implements OperatingHourRepository {
         hour.dayOfWeek,
         hour.openTime,
         hour.closeTime,
-        hour.isClosed,
-        hour.createdAt.getTime(),
-        hour.updatedAt.getTime(),
+        hour.isClosed ? 1 : 0,
+        this.toMySqlDateTime(hour.createdAt),
+        this.toMySqlDateTime(hour.updatedAt),
       ]
     );
   }
 
   async update(hour: OperatingHour): Promise<void> {
     const conn = this.db.getConnection();
-    hour.updatedAt = new Date();
     await conn.execute(
       'UPDATE operating_hours SET day_of_week = ?, open_time = ?, close_time = ?, is_closed = ?, updated_at = ? WHERE id = ?',
       [
         hour.dayOfWeek,
         hour.openTime,
         hour.closeTime,
-        hour.isClosed,
-        hour.updatedAt.getTime(),
+        hour.isClosed ? 1 : 0,
+        this.toMySqlDateTime(hour.updatedAt),
         hour.id,
       ]
     );
@@ -40,7 +43,7 @@ export class MySQLOperatingHourRepository implements OperatingHourRepository {
 
   async getByRestaurantId(restaurantId: string): Promise<OperatingHour[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM operating_hours WHERE restaurant_id = ?', [restaurantId]);
+    const [rows] = await conn.execute('SELECT * FROM operating_hours WHERE restaurant_id = ? ORDER BY day_of_week ASC', [restaurantId]);
     return (rows as any[]).map(row => ({
       id: row.id,
       restaurantId: row.restaurant_id,

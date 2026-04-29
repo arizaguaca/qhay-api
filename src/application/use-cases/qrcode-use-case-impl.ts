@@ -3,7 +3,7 @@ import { QRCode } from '../../domain/entities/qrcode';
 import { QRCodeRepository } from '../../domain/repositories/qrcode-repository';
 
 export class QRCodeUseCaseImpl {
-  constructor(private qrCodeRepo: QRCodeRepository) {}
+  constructor(private qrCodeRepo: QRCodeRepository) { }
 
   async generate(restaurantId: string, tableNumber: number, label?: string): Promise<QRCode> {
     // 1. Validar si la mesa ya existe para este restaurante
@@ -13,7 +13,7 @@ export class QRCodeUseCaseImpl {
     }
 
     const hash = uuidv4().split('-')[0];
-    const slugPath = `/restaurant/${restaurantId}/mesa/${hash}`;
+    const slugPath = `/restaurants/${restaurantId}?table=${hash}`;
 
     const qrCode: QRCode = {
       id: uuidv4(),

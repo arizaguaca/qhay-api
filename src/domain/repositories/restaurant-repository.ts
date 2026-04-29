@@ -6,4 +6,5 @@ export interface RestaurantRepository {
   fetch(): Promise<Restaurant[]>;
   getByOwnerId(ownerId: string): Promise<Restaurant[]>;
   update(restaurant: Restaurant): Promise<void>;
+  delete(id: string): Promise<void>;
 }

@@ -10,10 +10,19 @@ export class CustomerRegistrationUseCase {
   ) {}
 
   async execute(customer: Customer, channel: Channel): Promise<void> {
-    // 1. Create customer
-    await this.customerUseCase.create(customer);
+    // 1. Verificar si el cliente ya existe por teléfono
+    const existing = await this.customerUseCase.getByPhone(customer.phone);
 
-    // 2. Send verification code
+    if (existing) {
+      // 2. Si existe, actualizamos el nombre y enviamos el código
+      existing.fullName = customer.fullName;
+      await this.customerUseCase.update(existing);
+    } else {
+      // 3. Si no existe, creamos el nuevo cliente
+      await this.customerUseCase.create(customer);
+    }
+
+    // 4. Enviar código de verificación
     await this.verificationUseCase.sendCode(customer.phone, channel, EntityType.CUSTOMER);
   }
 }

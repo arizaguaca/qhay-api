@@ -7,13 +7,33 @@ export class OperatingHourUseCaseImpl {
 
   async saveHours(restaurantId: string, hours: OperatingHour[]): Promise<void> {
     for (const hour of hours) {
-      if (!hour.id) {
-        hour.id = uuidv4();
+      // Intentar buscar si ya existe el horario para ese día
+      const existing = await this.operatingHourRepo.getByRestaurantAndDay(restaurantId, hour.dayOfWeek);
+
+      if (existing) {
+        // Si existe, actualizamos
+        const updatedHour: OperatingHour = {
+          ...existing,
+          openTime: hour.openTime,
+          closeTime: hour.closeTime,
+          isClosed: hour.isClosed,
+          updatedAt: new Date(),
+        };
+        await this.operatingHourRepo.update(updatedHour);
+      } else {
+        // Si no existe, creamos uno nuevo
+        const newHour: OperatingHour = {
+          id: uuidv4(),
+          restaurantId,
+          dayOfWeek: hour.dayOfWeek,
+          openTime: hour.openTime,
+          closeTime: hour.closeTime,
+          isClosed: hour.isClosed,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        await this.operatingHourRepo.create(newHour);
       }
-      hour.restaurantId = restaurantId;
-      hour.createdAt = new Date();
-      hour.updatedAt = new Date();
-      await this.operatingHourRepo.create(hour);
     }
   }
 

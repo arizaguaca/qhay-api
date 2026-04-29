@@ -24,7 +24,7 @@ export interface Order {
   customerId: string;
   tableNumber: number;
   items: OrderItem[];
-  status: string; // pending, preparing, ready, delivered, paid, cancelled
+  status: string; // pending, preparing, ready, delivered, payment_requested, paid, cancelled
   cancelledBy?: 'customer' | 'staff' | 'system' | null;
   totalAmount: number;
   cancellationReason?: string | null;
@@ -38,6 +38,7 @@ export const OrderStatus = {
   Preparing: 'preparing',
   Ready: 'ready',
   Delivered: 'delivered',
+  PaymentRequested: 'payment_requested',
   Paid: 'paid',
   Cancelled: 'cancelled',
 } as const;

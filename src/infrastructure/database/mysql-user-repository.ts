@@ -18,7 +18,7 @@ export class MySQLUserRepository implements UserRepository {
         user.id,
         user.fullName,
         user.email,
-        user.phone,
+        user.phone || null,
         user.password,
         user.role,
         user.restaurantId || null,
@@ -31,34 +31,34 @@ export class MySQLUserRepository implements UserRepository {
 
   async getById(id: string): Promise<User | null> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM users WHERE id = ?', [id]);
+    const [rows] = await conn.execute('SELECT * FROM users WHERE id = ? AND deleted_at IS NULL', [id]);
     if ((rows as any[]).length === 0) return null;
     return this.mapRow((rows as any[])[0]);
   }
 
   async getByEmail(email: string): Promise<User | null> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const [rows] = await conn.execute('SELECT * FROM users WHERE email = ? AND deleted_at IS NULL', [email]);
     if ((rows as any[]).length === 0) return null;
     return this.mapRow((rows as any[])[0]);
   }
 
   async getByPhone(phone: string): Promise<User | null> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM users WHERE phone = ?', [phone]);
+    const [rows] = await conn.execute('SELECT * FROM users WHERE phone = ? AND deleted_at IS NULL', [phone]);
     if ((rows as any[]).length === 0) return null;
     return this.mapRow((rows as any[])[0]);
   }
 
   async getStaffByRestaurant(restaurantId: string): Promise<User[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM users WHERE restaurant_id = ?', [restaurantId]);
+    const [rows] = await conn.execute('SELECT * FROM users WHERE restaurant_id = ? AND deleted_at IS NULL', [restaurantId]);
     return (rows as any[]).map(row => this.mapRow(row));
   }
 
   async fetch(): Promise<User[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM users');
+    const [rows] = await conn.execute('SELECT * FROM users WHERE deleted_at IS NULL');
     return (rows as any[]).map(row => this.mapRow(row));
   }
 
@@ -81,7 +81,7 @@ export class MySQLUserRepository implements UserRepository {
 
   async delete(id: string): Promise<void> {
     const conn = this.db.getConnection();
-    await conn.execute('DELETE FROM users WHERE id = ?', [id]);
+    await conn.execute('UPDATE users SET deleted_at = NOW() WHERE id = ?', [id]);
   }
 
   private mapRow(row: any): User {

@@ -48,12 +48,12 @@ export class OrderController {
   async updateStatus(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { status } = req.body;
+      const { status, userId } = req.body;
       if (!status) {
         res.status(400).json({ error: 'status is required' });
         return;
       }
-      await this.orderUseCase.updateStatus(id, status);
+      await this.orderUseCase.updateStatus(id, status, userId);
       res.json({ message: 'Order status updated successfully' });
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });

@@ -22,6 +22,91 @@ export class UserController {
     }
   }
 
+  async createStaff(req: Request, res: Response): Promise<void> {
+    try {
+      const userData = req.body;
+      const allowedRoles = [Role.MANAGER, Role.CASHIER, Role.COOK, Role.WAITER];
+      
+      if (!allowedRoles.includes(userData.role)) {
+        res.status(400).json({ 
+          error: `Invalid staff role. Allowed roles are: ${allowedRoles.join(', ')}` 
+        });
+        return;
+      }
+
+      if (!userData.restaurantId) {
+        res.status(400).json({ error: 'restaurantId is required for staff registration' });
+        return;
+      }
+
+      // Mapear 'name' a 'fullName' por si acaso
+      if (userData.name && !userData.fullName) {
+        userData.fullName = userData.name;
+      }
+
+      await this.userRegistrationUseCase.execute(userData, Channel.EMAIL);
+      res.status(201).json({ message: 'Staff member created successfully' });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  async updateStaff(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userData = req.body;
+      const allowedRoles = [Role.MANAGER, Role.CASHIER, Role.COOK, Role.WAITER];
+
+      // Verificar que el usuario a editar existe y es staff
+      const existingUser = await this.userUseCase.getById(id);
+      if (!existingUser) {
+        res.status(404).json({ error: 'Staff member not found' });
+        return;
+      }
+
+      if (!allowedRoles.includes(existingUser.role)) {
+        res.status(403).json({ error: 'Cannot update non-staff users via this endpoint' });
+        return;
+      }
+
+      // Si intentan cambiar el rol, validar que sea a otro rol de staff
+      if (userData.role && !allowedRoles.includes(userData.role)) {
+        res.status(400).json({ error: 'Invalid staff role' });
+        return;
+      }
+
+      const updatedUser = { ...userData, id };
+      await this.userUseCase.update(updatedUser);
+      res.json({ message: 'Staff member updated successfully' });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  async deleteStaff(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      // Verificar que el usuario a eliminar existe y es staff
+      const existingUser = await this.userUseCase.getById(id);
+      if (!existingUser) {
+        res.status(404).json({ error: 'Staff member not found' });
+        return;
+      }
+
+      const allowedRoles = [Role.MANAGER, Role.CASHIER, Role.COOK, Role.WAITER];
+      if (!allowedRoles.includes(existingUser.role)) {
+        res.status(403).json({ error: 'Cannot delete non-staff users via this endpoint' });
+        return;
+      }
+
+      await this.userUseCase.delete(id);
+      res.json({ message: 'Staff member deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
   async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
