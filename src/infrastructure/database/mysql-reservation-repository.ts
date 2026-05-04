@@ -13,7 +13,7 @@ export class MySQLReservationRepository implements ReservationRepository {
   async create(reservation: Reservation): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO reservations (id, customer_id, restaurant_id, table_number, reservation_date, guests, status, cancelled_by, cancellation_reason, cancelled_by_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO reservations (id, customer_id, restaurant_id, table_number, reservation_date, guests, status, cancelled_by, cancellation_reason, cancelled_by_user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         reservation.id,
         reservation.customerId,
@@ -25,8 +25,6 @@ export class MySQLReservationRepository implements ReservationRepository {
         reservation.cancelledBy ?? null,
         reservation.cancellationReason ?? null,
         reservation.cancelledByUserId ?? null,
-        toMySqlDateTime(reservation.createdAt),
-        toMySqlDateTime(reservation.updatedAt),
       ]
     );
   }

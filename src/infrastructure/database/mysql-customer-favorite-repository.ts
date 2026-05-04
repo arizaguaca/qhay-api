@@ -13,8 +13,8 @@ export class MySQLCustomerFavoriteRepository implements CustomerFavoriteReposito
   async create(favorite: CustomerFavorite): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO customer_favorites (id, customer_id, menu_item_id, created_at) VALUES (?, ?, ?, ?)',
-      [favorite.id, favorite.customerId, favorite.menuItemId, toMySqlDateTime(favorite.createdAt)]
+      'INSERT INTO customer_favorites (id, customer_id, menu_item_id) VALUES (?, ?, ?)',
+      [favorite.id, favorite.customerId, favorite.menuItemId]
     );
   }
 

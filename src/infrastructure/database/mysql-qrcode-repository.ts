@@ -8,7 +8,7 @@ export class MySQLQRCodeRepository implements QRCodeRepository {
   async create(qrCode: QRCode): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO qrcodes (id, restaurant_id, table_number, label, slug_path, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO qrcodes (id, restaurant_id, table_number, label, slug_path, is_active) VALUES (?, ?, ?, ?, ?, ?)',
       [
         qrCode.id,
         qrCode.restaurantId,
@@ -16,8 +16,6 @@ export class MySQLQRCodeRepository implements QRCodeRepository {
         qrCode.label,
         qrCode.slugPath,
         qrCode.isActive ? 1 : 0,
-        qrCode.createdAt.toISOString().slice(0, 19).replace('T', ' '),
-        qrCode.updatedAt.toISOString().slice(0, 19).replace('T', ' '),
       ]
     );
   }

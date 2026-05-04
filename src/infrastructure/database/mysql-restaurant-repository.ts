@@ -13,7 +13,7 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
   async create(restaurant: Restaurant): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO restaurants (id, name, description, address, phone, location_type, cuisine_id, city_id, mall_id, link, user_id, logo_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO restaurants (id, name, description, address, phone, location_type, cuisine_id, city_id, mall_id, link, user_id, logo_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         restaurant.id,
         restaurant.name,
@@ -27,8 +27,6 @@ export class MySQLRestaurantRepository implements RestaurantRepository {
         restaurant.link ?? null,
         restaurant.userId,
         restaurant.logoUrl,
-        toMySqlDateTime(restaurant.createdAt),
-        toMySqlDateTime(restaurant.updatedAt),
       ]
     );
   }

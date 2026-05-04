@@ -12,7 +12,7 @@ export class MySQLOperatingHourRepository implements OperatingHourRepository {
   async create(hour: OperatingHour): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO operating_hours (id, restaurant_id, day_of_week, open_time, close_time, is_closed, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO operating_hours (id, restaurant_id, day_of_week, open_time, close_time, is_closed) VALUES (?, ?, ?, ?, ?, ?)',
       [
         hour.id,
         hour.restaurantId,
@@ -20,8 +20,6 @@ export class MySQLOperatingHourRepository implements OperatingHourRepository {
         hour.openTime,
         hour.closeTime,
         hour.isClosed ? 1 : 0,
-        this.toMySqlDateTime(hour.createdAt),
-        this.toMySqlDateTime(hour.updatedAt),
       ]
     );
   }

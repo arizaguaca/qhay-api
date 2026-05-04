@@ -265,3 +265,15 @@ CREATE TABLE IF NOT EXISTS notifications_sent_log (
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
 );
+
+CREATE TABLE IF NOT EXISTS service_requests (
+    id CHAR(36) PRIMARY KEY,
+    restaurant_id CHAR(36) NOT NULL,
+    table_number INT NOT NULL,
+    customer_id CHAR(36),
+    status ENUM('pending', 'resolved') DEFAULT 'pending',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
+);

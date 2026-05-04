@@ -13,7 +13,7 @@ export class MySQLOrderReviewRepository implements OrderReviewRepository {
   async create(review: OrderReview): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO order_reviews (id, order_id, restaurant_id, customer_id, overall_rating, comment, wants_contact, contact_status, resolution_comment, service_rating, food_rating, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO order_reviews (id, order_id, restaurant_id, customer_id, overall_rating, comment, wants_contact, contact_status, resolution_comment, service_rating, food_rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         review.id,
         review.orderId,
@@ -26,8 +26,6 @@ export class MySQLOrderReviewRepository implements OrderReviewRepository {
         review.resolutionComment ?? null,
         review.serviceRating ?? null,
         review.foodRating ?? null,
-        toMySqlDateTime(review.createdAt),
-        toMySqlDateTime(review.updatedAt),
       ]
     );
   }

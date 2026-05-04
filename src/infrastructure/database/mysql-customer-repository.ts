@@ -8,7 +8,7 @@ export class MySQLCustomerRepository implements CustomerRepository {
   async create(customer: Customer): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO customers (id, full_name, phone, is_active, allow_promotions, promotions_updated_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO customers (id, full_name, phone, is_active, allow_promotions, promotions_updated_at) VALUES (?, ?, ?, ?, ?, ?)',
       [
         customer.id,
         customer.fullName || null,
@@ -16,8 +16,6 @@ export class MySQLCustomerRepository implements CustomerRepository {
         customer.isActive ?? true,
         customer.allowPromotions ?? false,
         customer.promotionsUpdatedAt ? this.formatDate(customer.promotionsUpdatedAt) : null,
-        this.formatDate(customer.createdAt),
-        this.formatDate(customer.updatedAt),
       ]
     );
   }

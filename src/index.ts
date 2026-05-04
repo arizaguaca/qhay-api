@@ -20,6 +20,7 @@ import { MySQLOrderReviewRepository } from './infrastructure/database/mysql-orde
 import { MySQLOrderStatusHistoryRepository } from './infrastructure/database/mysql-order-status-history-repository';
 import { MySQLCustomerFavoriteRepository } from './infrastructure/database/mysql-customer-favorite-repository';
 import { MySQLNotificationSentLogRepository } from './infrastructure/database/mysql-notification-sent-log-repository';
+import { MySQLServiceRequestRepository } from './infrastructure/database/mysql-service-request-repository';
 import { RestaurantUseCaseImpl } from './application/use-cases/restaurant-use-case-impl';
 import { UserUseCaseImpl } from './application/use-cases/user-use-case-impl';
 import { CustomerUseCaseImpl } from './application/use-cases/customer-use-case-impl';
@@ -28,6 +29,7 @@ import { OperatingHourUseCaseImpl } from './application/use-cases/operating-hour
 import { OrderUseCaseImpl } from './application/use-cases/order-use-case-impl';
 import { QRCodeUseCaseImpl } from './application/use-cases/qrcode-use-case-impl';
 import { ReservationUseCaseImpl } from './application/use-cases/reservation-use-case-impl';
+import { ServiceRequestUseCaseImpl } from './application/use-cases/service-request-use-case-impl';
 import { VerificationUseCaseImpl } from './application/use-cases/verification-use-case-impl';
 import { MallUseCase } from './application/use-cases/mall-use-case';
 import { CuisineTypeUseCase } from './application/use-cases/cuisine-type-use-case';
@@ -50,6 +52,7 @@ import { CuisineTypeController } from './infrastructure/web/controllers/cuisine-
 import { CityController } from './infrastructure/web/controllers/city-controller';
 import { OrderReviewController } from './infrastructure/web/controllers/order-review-controller';
 import { CustomerFavoriteController } from './infrastructure/web/controllers/customer-favorite-controller';
+import { ServiceRequestController } from './infrastructure/web/controllers/service-request-controller';
 import { createRestaurantRoutes } from './infrastructure/web/routes/restaurant-routes';
 import { createUserRoutes } from './infrastructure/web/routes/user-routes';
 import { createCustomerRoutes } from './infrastructure/web/routes/customer-routes';
@@ -64,6 +67,7 @@ import { createCuisineTypeRoutes } from './infrastructure/web/routes/cuisine-typ
 import { createCityRoutes } from './infrastructure/web/routes/city-routes';
 import { createOrderReviewRoutes } from './infrastructure/web/routes/order-review-routes';
 import { createCustomerFavoriteRoutes } from './infrastructure/web/routes/customer-favorite-routes';
+import { createServiceRequestRoutes } from './infrastructure/web/routes/service-request-routes';
 import { SMSNotification } from './infrastructure/notifications/sms-notification';
 import { WSPNotification } from './infrastructure/notifications/wsp-notification';
 import { EmailNotification } from './infrastructure/notifications/email-notification';
@@ -109,6 +113,7 @@ async function main() {
   const orderStatusHistoryRepo = new MySQLOrderStatusHistoryRepository(db);
   const customerFavoriteRepo = new MySQLCustomerFavoriteRepository(db);
   const notificationSentLogRepo = new MySQLNotificationSentLogRepository(db);
+  const serviceRequestRepo = new MySQLServiceRequestRepository(db);
 
   // Setup Infrastructure
   const templateManager = new TemplateManager();
@@ -146,6 +151,7 @@ async function main() {
   const cityUseCase = new CityUseCase(cityRepo);
   const orderReviewUseCase = new OrderReviewUseCaseImpl(orderReviewRepo);
   const customerFavoriteUseCase = new CustomerFavoriteUseCaseImpl(customerFavoriteRepo);
+  const serviceRequestUseCase = new ServiceRequestUseCaseImpl(serviceRequestRepo);
 
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
@@ -162,6 +168,7 @@ async function main() {
   const cityController = new CityController(cityUseCase);
   const orderReviewController = new OrderReviewController(orderReviewUseCase);
   const customerFavoriteController = new CustomerFavoriteController(customerFavoriteUseCase);
+  const serviceRequestController = new ServiceRequestController(serviceRequestUseCase);
 
   // Setup Routes
   const app = express();
@@ -179,6 +186,10 @@ async function main() {
   app.use(`${apiPrefix}/users`, createUserRoutes(userController));
   // legacy auth path from Go version
   app.post(`${apiPrefix}/auth/login`, userController.login.bind(userController));
+
+  app.use(`${apiPrefix}/service-requests`, createServiceRequestRoutes(serviceRequestController));
+  app.get(`${apiPrefix}/restaurants/:restaurantId/service-requests`, serviceRequestController.getByRestaurantId.bind(serviceRequestController));
+  app.get(`${apiPrefix}/customers/:customerId/service-requests`, serviceRequestController.getByCustomerId.bind(serviceRequestController));
 
   // direct user owner -> restaurants bridge route (compatibilidad con frontend /api/v1/users/:id/restaurants)
   app.get(`${apiPrefix}/users/:id/restaurants`, async (req, res) => {

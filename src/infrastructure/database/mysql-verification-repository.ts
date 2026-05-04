@@ -8,7 +8,7 @@ export class MySQLVerificationRepository implements VerificationRepository {
   async create(verification: VerificationCode): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO verification_codes (id, entity_id, entity_type, contact, channel, code, verified, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO verification_codes (id, entity_id, entity_type, contact, channel, code, verified, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         verification.id,
         verification.entityId,
@@ -18,8 +18,6 @@ export class MySQLVerificationRepository implements VerificationRepository {
         verification.code,
         verification.verified,
         this.formatDate(verification.expiresAt),
-        this.formatDate(verification.createdAt),
-        this.formatDate(verification.updatedAt),
       ]
     );
   }

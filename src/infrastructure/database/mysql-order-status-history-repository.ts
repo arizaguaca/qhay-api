@@ -13,12 +13,11 @@ export class MySQLOrderStatusHistoryRepository implements OrderStatusHistoryRepo
   async create(entry: OrderStatusHistory): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO order_status_history (id, order_id, status, changed_at, changed_by_user_id) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO order_status_history (id, order_id, status, changed_by_user_id) VALUES (?, ?, ?, ?)',
       [
         entry.id,
         entry.orderId,
         entry.status,
-        toMySqlDateTime(entry.changedAt),
         entry.changedByUserId ?? null,
       ]
     );

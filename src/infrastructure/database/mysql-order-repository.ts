@@ -13,7 +13,7 @@ export class MySQLOrderRepository implements OrderRepository {
   async create(order: Order): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO orders (id, restaurant_id, customer_id, table_number, status, cancelled_by, total_amount, cancellation_reason, cancelled_by_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO orders (id, restaurant_id, customer_id, table_number, status, cancelled_by, total_amount, cancellation_reason, cancelled_by_user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         order.id,
         order.restaurantId,
@@ -24,8 +24,6 @@ export class MySQLOrderRepository implements OrderRepository {
         order.totalAmount,
         order.cancellationReason ?? null,
         order.cancelledByUserId ?? null,
-        toMySqlDateTime(order.createdAt),
-        toMySqlDateTime(order.updatedAt),
       ]
     );
 
@@ -55,14 +53,13 @@ export class MySQLOrderRepository implements OrderRepository {
             modifier.id = require('uuid').v4();
           }
           await conn.execute(
-            'INSERT INTO order_item_modifiers (id, order_item_id, product_option_id, name, price, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO order_item_modifiers (id, order_item_id, product_option_id, name, price) VALUES (?, ?, ?, ?, ?)',
             [
               modifier.id,
               item.id,
               modifier.productOptionId,
               modifier.name,
               modifier.price,
-              toMySqlDateTime(modifier.createdAt || new Date()),
             ]
           );
         }

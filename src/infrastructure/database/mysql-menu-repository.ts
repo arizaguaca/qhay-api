@@ -9,7 +9,7 @@ export class MySQLMenuRepository implements MenuRepository {
   async create(item: MenuItem): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO menu_items (id, restaurant_id, menu_category_id, name, description, price, prep_time, image_url, is_available, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO menu_items (id, restaurant_id, menu_category_id, name, description, price, prep_time, image_url, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         item.id,
         item.restaurantId,
@@ -20,8 +20,6 @@ export class MySQLMenuRepository implements MenuRepository {
         item.prepTime ?? null,
         item.imageUrl ?? null,
         item.isAvailable ? 1 : 0,
-        item.createdAt,
-        item.updatedAt,
       ]
     );
 

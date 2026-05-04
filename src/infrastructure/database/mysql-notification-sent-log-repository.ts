@@ -13,8 +13,8 @@ export class MySQLNotificationSentLogRepository implements NotificationSentLogRe
   async create(log: NotificationSentLog): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO notifications_sent_log (id, customer_id, restaurant_id, notification_type, sent_at) VALUES (?, ?, ?, ?, ?)',
-      [log.id, log.customerId, log.restaurantId, log.notificationType ?? null, toMySqlDateTime(log.sentAt)]
+      'INSERT INTO notifications_sent_log (id, customer_id, restaurant_id, notification_type) VALUES (?, ?, ?, ?)',
+      [log.id, log.customerId, log.restaurantId, log.notificationType ?? null]
     );
   }
 

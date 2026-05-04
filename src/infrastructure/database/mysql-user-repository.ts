@@ -13,18 +13,16 @@ export class MySQLUserRepository implements UserRepository {
   async create(user: User): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute(
-      'INSERT INTO users (id, full_name, email, phone, password, role, restaurant_id, is_verified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO users (id, full_name, email, phone, password, role, restaurant_id, is_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         user.id,
         user.fullName,
         user.email,
-        user.phone || null,
+        user.phone,
         user.password,
         user.role,
         user.restaurantId || null,
         user.isVerified || false,
-        toMySqlDateTime(user.createdAt),
-        toMySqlDateTime(user.updatedAt),
       ]
     );
   }
