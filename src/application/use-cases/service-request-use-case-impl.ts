@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ServiceRequest } from '../../domain/entities/service-request';
 import { ServiceRequestRepository } from '../../domain/repositories/service-request-repository';
+import { SocketEmitter } from '../../infrastructure/socket/socket-emitter';
 
 export class ServiceRequestUseCaseImpl {
   constructor(private repo: ServiceRequestRepository) {}
@@ -14,6 +15,12 @@ export class ServiceRequestUseCaseImpl {
     request.updatedAt = new Date();
 
     await this.repo.create(request);
+
+    // Notify via Socket
+    SocketEmitter.notifyCallWaiter(request.restaurantId, {
+      tableNumber: request.tableNumber,
+      requestId: request.id
+    });
   }
 
   async updateStatus(id: string, status: 'pending' | 'resolved'): Promise<void> {

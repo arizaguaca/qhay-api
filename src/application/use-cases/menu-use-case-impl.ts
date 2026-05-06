@@ -3,6 +3,7 @@ import { MenuItem } from '../../domain/entities/menu-item';
 import { Category } from '../../domain/entities/category';
 import { MenuRepository } from '../../domain/repositories/menu-repository';
 import { CategoryRepository } from '../../domain/repositories/category-repository';
+import { SocketEmitter } from '../../infrastructure/socket/socket-emitter';
 
 export class MenuUseCaseImpl {
   constructor(
@@ -53,6 +54,12 @@ export class MenuUseCaseImpl {
 
     this.ensureModifierIds(item);
     await this.menuRepo.update(item);
+
+    // Notify via Socket
+    SocketEmitter.notifyMenuUpdate(item.restaurantId, {
+      menuItemId: item.id,
+      isAvailable: item.isAvailable
+    });
   }
 
   async createCategory(category: Category): Promise<Category> {

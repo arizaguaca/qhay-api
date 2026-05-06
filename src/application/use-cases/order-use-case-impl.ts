@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Order } from '../../domain/entities/order';
 import { OrderRepository } from '../../domain/repositories/order-repository';
 import { OrderStatusHistoryRepository } from '../../domain/repositories/order-status-history-repository';
+import { SocketEmitter } from '../../infrastructure/socket/socket-emitter';
 
 export class OrderUseCaseImpl {
   constructor(
@@ -32,6 +33,11 @@ export class OrderUseCaseImpl {
       changedAt: new Date(),
       changedByUserId: null, // Initial creation usually doesn't have a staff user
     });
+
+    // Notify via Socket
+    if (order.status === 'pending') {
+      SocketEmitter.notifyNewOrder(order.restaurantId, order);
+    }
   }
 
   async getById(id: string): Promise<Order | null> {
@@ -62,5 +68,11 @@ export class OrderUseCaseImpl {
       changedAt: new Date(),
       changedByUserId: changedByUserId || null,
     });
+
+    // Notify status update
+    const order = await this.orderRepo.getById(id);
+    if (order) {
+      SocketEmitter.notifyOrderStatusUpdate(order.restaurantId, id, status);
+    }
   }
 }

@@ -1,5 +1,6 @@
 import path from 'path';
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import { loadConfig } from './config/config';
 import { MySQLConnection } from './infrastructure/database/mysql-connection';
@@ -74,6 +75,7 @@ import { EmailNotification } from './infrastructure/notifications/email-notifica
 import { TemplateManager } from './infrastructure/notifications/template-manager';
 import { UserLookupStrategy } from './application/strategies/user-lookup-strategy';
 import { CustomerLookupStrategy } from './application/strategies/customer-lookup-strategy';
+import { SocketService } from './infrastructure/socket/socket-service';
 
 async function main() {
   const config = loadConfig();
@@ -215,10 +217,16 @@ async function main() {
   app.use(`${apiPrefix}/order-reviews`, createOrderReviewRoutes(orderReviewController));
   app.use(`${apiPrefix}/favorites`, createCustomerFavoriteRoutes(customerFavoriteController));
 
-  // Start Server
+  // Start Server with Socket.io
   const port = config.port;
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  const httpServer = createServer(app);
+  
+  // Initialize Socket.io
+  const socketService = SocketService.getInstance();
+  socketService.initialize(httpServer);
+
+  httpServer.listen(port, () => {
+    console.log(`Server running on port ${port} (HTTP + WebSockets)`);
   });
 }
 

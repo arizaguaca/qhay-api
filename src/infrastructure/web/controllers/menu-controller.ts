@@ -14,6 +14,14 @@ export class MenuController {
         item.groups = JSON.parse(item.groups);
       }
 
+      // Normalizar tipos para multipart/form-data
+      if (item.isAvailable !== undefined) {
+        item.isAvailable = String(item.isAvailable) === 'true';
+      }
+      if (item.price !== undefined) {
+        item.price = Number(item.price);
+      }
+
       if (req.file) {
         const relativePath = path.join('uploads', 'menu', req.file.filename).replace(/\\/g, '/');
         item.imageUrl = relativePath;
@@ -59,6 +67,14 @@ export class MenuController {
       // Si los grupos vienen como string, los parseamos
       if (item.groups && typeof item.groups === 'string') {
         item.groups = JSON.parse(item.groups);
+      }
+
+      // Normalizar tipos para multipart/form-data
+      if (item.isAvailable !== undefined) {
+        item.isAvailable = String(item.isAvailable) === 'true';
+      }
+      if (item.price !== undefined) {
+        item.price = Number(item.price);
       }
 
       if (req.file) {
