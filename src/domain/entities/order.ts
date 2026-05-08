@@ -15,6 +15,7 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number; // price at the time of order
   notes?: string;
+  prepTime?: number; // populated from MenuItem
   modifiers?: OrderItemModifier[];
 }
 

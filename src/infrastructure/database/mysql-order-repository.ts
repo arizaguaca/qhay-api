@@ -165,7 +165,13 @@ export class MySQLOrderRepository implements OrderRepository {
 
   private async getOrderItems(orderId: string): Promise<OrderItem[]> {
     const conn = this.db.getConnection();
-    const [itemRows] = await conn.execute('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
+    const [itemRows] = await conn.execute(
+      `SELECT oi.*, mi.prep_time 
+       FROM order_items oi 
+       LEFT JOIN menu_items mi ON oi.menu_item_id = mi.id 
+       WHERE oi.order_id = ?`, 
+      [orderId]
+    );
     const items: OrderItem[] = [];
 
     for (const itemRow of itemRows as any[]) {
@@ -188,6 +194,7 @@ export class MySQLOrderRepository implements OrderRepository {
         quantity: itemRow.quantity,
         unitPrice: itemRow.unit_price,
         notes: itemRow.notes,
+        prepTime: itemRow.prep_time,
         modifiers,
       });
     }
