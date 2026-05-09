@@ -36,7 +36,11 @@ export class OrderUseCaseImpl {
 
     // Notify via Socket
     if (order.status === 'pending') {
-      SocketEmitter.notifyNewOrder(order.restaurantId, order);
+      // Re-fetch order from repo to get fully populated items (including prepTime from JOIN)
+      const fullOrder = await this.orderRepo.getById(order.id);
+      if (fullOrder) {
+        SocketEmitter.notifyNewOrder(order.restaurantId, fullOrder);
+      }
     }
   }
 
