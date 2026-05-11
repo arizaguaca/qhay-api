@@ -48,8 +48,8 @@ export class OrderUseCaseImpl {
     return await this.orderRepo.getById(id);
   }
 
-  async getByRestaurantId(restaurantId: string): Promise<Order[]> {
-    return await this.orderRepo.fetchByRestaurantId(restaurantId);
+  async getByRestaurantId(restaurantId: string, statuses?: string[]): Promise<Order[]> {
+    return await this.orderRepo.fetchByRestaurantId(restaurantId, statuses);
   }
 
   async getByCustomerId(customerId: string): Promise<Order[]> {
