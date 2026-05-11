@@ -27,7 +27,6 @@ export class MySQLOrderRepository implements OrderRepository {
       ]
     );
 
-    // Insert order items
     for (const item of order.items) {
       if (!item.id) {
         item.id = require('uuid').v4();
@@ -46,7 +45,6 @@ export class MySQLOrderRepository implements OrderRepository {
         ]
       );
 
-      // Insert order item modifiers
       if (item.modifiers && item.modifiers.length > 0) {
         for (const modifier of item.modifiers) {
           if (!modifier.id) {
@@ -72,24 +70,8 @@ export class MySQLOrderRepository implements OrderRepository {
     const [rows] = await conn.execute('SELECT * FROM orders WHERE id = ?', [id]);
     if ((rows as any[]).length === 0) return null;
     const row = (rows as any[])[0];
-
-    // Get order items with modifiers
     const items = await this.getOrderItems(id);
-
-    return {
-      id: row.id,
-      restaurantId: row.restaurant_id,
-      customerId: row.customer_id,
-      tableNumber: row.table_number,
-      items,
-      status: row.status,
-      cancelledBy: row.cancelled_by ?? null,
-      totalAmount: row.total_amount,
-      cancellationReason: row.cancellation_reason ?? null,
-      cancelledByUserId: row.cancelled_by_user_id ?? null,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
-    };
+    return this.mapRow(row, items);
   }
 
   async fetchByRestaurantId(restaurantId: string, statuses?: string[]): Promise<Order[]> {
@@ -104,54 +86,41 @@ export class MySQLOrderRepository implements OrderRepository {
     }
 
     const [rows] = await conn.execute(query, params);
-    const orders: Order[] = [];
-    for (const row of rows as any[]) {
-      const items = await this.getOrderItems(row.id);
-      orders.push({
-        id: row.id,
-        restaurantId: row.restaurant_id,
-        customerId: row.customer_id,
-        tableNumber: row.table_number,
-        items,
-        status: row.status,
-        cancelledBy: row.cancelled_by ?? null,
-        totalAmount: row.total_amount,
-        cancellationReason: row.cancellation_reason ?? null,
-        cancelledByUserId: row.cancelled_by_user_id ?? null,
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at),
-      });
-    }
-    return orders;
+    return this.mapRows(rows as any[]);
   }
 
   async fetchByCustomerId(customerId: string): Promise<Order[]> {
     const conn = this.db.getConnection();
     const [rows] = await conn.execute('SELECT * FROM orders WHERE customer_id = ?', [customerId]);
-    const orders: Order[] = [];
-    for (const row of rows as any[]) {
-      const items = await this.getOrderItems(row.id);
-      orders.push({
-        id: row.id,
-        restaurantId: row.restaurant_id,
-        customerId: row.customer_id,
-        tableNumber: row.table_number,
-        items,
-        status: row.status,
-        cancelledBy: row.cancelled_by ?? null,
-        totalAmount: row.total_amount,
-        cancellationReason: row.cancellation_reason ?? null,
-        cancelledByUserId: row.cancelled_by_user_id ?? null,
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at),
-      });
+    return this.mapRows(rows as any[]);
+  }
+
+  async fetchByTableAndRestaurant(restaurantId: string, tableNumber: number, statuses?: string[]): Promise<Order[]> {
+    const conn = this.db.getConnection();
+    let query = 'SELECT * FROM orders WHERE restaurant_id = ? AND table_number = ?';
+    const params: any[] = [restaurantId, tableNumber];
+
+    if (statuses && statuses.length > 0) {
+      const placeholders = statuses.map(() => '?').join(', ');
+      query += ` AND status IN (${placeholders})`;
+      params.push(...statuses);
     }
-    return orders;
+
+    const [rows] = await conn.execute(query, params);
+    return this.mapRows(rows as any[]);
   }
 
   async updateStatus(id: string, status: string): Promise<void> {
     const conn = this.db.getConnection();
     await conn.execute('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?', [status, toMySqlDateTime(new Date()), id]);
+  }
+
+  async updateCustomerAndOrigin(id: string, customerId: string, originCustomerId: string): Promise<void> {
+    const conn = this.db.getConnection();
+    await conn.execute(
+      'UPDATE orders SET customer_id = ?, origin_customer_id = ?, updated_at = ? WHERE id = ?',
+      [customerId, originCustomerId, toMySqlDateTime(new Date()), id]
+    );
   }
 
   async update(order: Order): Promise<void> {
@@ -172,19 +141,45 @@ export class MySQLOrderRepository implements OrderRepository {
     );
   }
 
+  private async mapRows(rows: any[]): Promise<Order[]> {
+    const orders: Order[] = [];
+    for (const row of rows) {
+      const items = await this.getOrderItems(row.id);
+      orders.push(this.mapRow(row, items));
+    }
+    return orders;
+  }
+
+  private mapRow(row: any, items: OrderItem[]): Order {
+    return {
+      id: row.id,
+      restaurantId: row.restaurant_id,
+      customerId: row.customer_id,
+      originCustomerId: row.origin_customer_id ?? null,
+      tableNumber: row.table_number,
+      items,
+      status: row.status,
+      cancelledBy: row.cancelled_by ?? null,
+      totalAmount: row.total_amount,
+      cancellationReason: row.cancellation_reason ?? null,
+      cancelledByUserId: row.cancelled_by_user_id ?? null,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    };
+  }
+
   private async getOrderItems(orderId: string): Promise<OrderItem[]> {
     const conn = this.db.getConnection();
     const [itemRows] = await conn.execute(
       `SELECT oi.*, mi.prep_time 
        FROM order_items oi 
        LEFT JOIN menu_items mi ON oi.menu_item_id = mi.id 
-       WHERE oi.order_id = ?`, 
+       WHERE oi.order_id = ?`,
       [orderId]
     );
     const items: OrderItem[] = [];
 
     for (const itemRow of itemRows as any[]) {
-      // Get modifiers for this order item
       const [modRows] = await conn.execute('SELECT * FROM order_item_modifiers WHERE order_item_id = ?', [itemRow.id]);
       const modifiers: OrderItemModifier[] = (modRows as any[]).map(modRow => ({
         id: modRow.id,

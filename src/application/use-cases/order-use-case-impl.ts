@@ -56,6 +56,40 @@ export class OrderUseCaseImpl {
     return await this.orderRepo.fetchByCustomerId(customerId);
   }
 
+  async getByTableAndRestaurant(restaurantId: string, tableNumber: number): Promise<Order[]> {
+    const activeStatuses = ['pending', 'preparing', 'ready', 'delivered'];
+    return await this.orderRepo.fetchByTableAndRestaurant(restaurantId, tableNumber, activeStatuses);
+  }
+
+  async requestTablePayment(restaurantId: string, tableNumber: number, payingCustomerId: string): Promise<{ updatedCount: number }> {
+    const readyOrders = await this.orderRepo.fetchByTableAndRestaurant(restaurantId, tableNumber, ['delivered']);
+
+    if (readyOrders.length === 0) {
+      return { updatedCount: 0 };
+    }
+
+    for (const order of readyOrders) {
+      if (order.customerId !== payingCustomerId) {
+        await this.orderRepo.updateCustomerAndOrigin(order.id, payingCustomerId, order.customerId);
+      }
+      await this.orderRepo.updateStatus(order.id, 'payment_requested');
+      await this.historyRepo.create({
+        id: uuidv4(),
+        orderId: order.id,
+        status: 'payment_requested',
+        changedAt: new Date(),
+        changedByUserId: null,
+      });
+
+      const updatedOrder = await this.orderRepo.getById(order.id);
+      if (updatedOrder) {
+        SocketEmitter.notifyOrderStatusUpdate(restaurantId, order.id, 'payment_requested');
+      }
+    }
+
+    return { updatedCount: readyOrders.length };
+  }
+
   async updateStatus(id: string, status: string, changedByUserId?: string | null): Promise<void> {
     const validStatuses = ['pending', 'preparing', 'ready', 'delivered', 'payment_requested', 'paid', 'cancelled'];
     if (!validStatuses.includes(status)) {
