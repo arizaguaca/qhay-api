@@ -30,11 +30,12 @@ export class OrderController {
 
   async fetch(req: Request, res: Response): Promise<void> {
     try {
-      const { restaurant_id, customer_id } = req.query;
+      const { restaurant_id, customer_id, statuses } = req.query;
       let orders: any[] = [];
 
       if (restaurant_id) {
-        orders = await this.orderUseCase.getByRestaurantId(restaurant_id as string);
+        const statusArray = statuses ? (statuses as string).split(',') : undefined;
+        orders = await this.orderUseCase.getByRestaurantId(restaurant_id as string, statusArray);
       } else if (customer_id) {
         orders = await this.orderUseCase.getByCustomerId(customer_id as string);
       }

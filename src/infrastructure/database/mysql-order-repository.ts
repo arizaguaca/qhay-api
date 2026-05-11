@@ -92,9 +92,18 @@ export class MySQLOrderRepository implements OrderRepository {
     };
   }
 
-  async fetchByRestaurantId(restaurantId: string): Promise<Order[]> {
+  async fetchByRestaurantId(restaurantId: string, statuses?: string[]): Promise<Order[]> {
     const conn = this.db.getConnection();
-    const [rows] = await conn.execute('SELECT * FROM orders WHERE restaurant_id = ?', [restaurantId]);
+    let query = 'SELECT * FROM orders WHERE restaurant_id = ?';
+    const params: any[] = [restaurantId];
+
+    if (statuses && statuses.length > 0) {
+      const placeholders = statuses.map(() => '?').join(', ');
+      query += ` AND status IN (${placeholders})`;
+      params.push(...statuses);
+    }
+
+    const [rows] = await conn.execute(query, params);
     const orders: Order[] = [];
     for (const row of rows as any[]) {
       const items = await this.getOrderItems(row.id);
