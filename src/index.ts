@@ -193,6 +193,9 @@ async function main() {
   app.get(`${apiPrefix}/restaurants/:restaurantId/service-requests`, serviceRequestController.getByRestaurantId.bind(serviceRequestController));
   app.get(`${apiPrefix}/customers/:customerId/service-requests`, serviceRequestController.getByCustomerId.bind(serviceRequestController));
 
+  app.get(`${apiPrefix}/restaurants/:restaurantId/tables/:tableNumber/orders`, orderController.getByTable.bind(orderController));
+  app.patch(`${apiPrefix}/restaurants/:restaurantId/tables/:tableNumber/orders/payment-status`, orderController.requestTablePayment.bind(orderController));
+
   // direct user owner -> restaurants bridge route (compatibilidad con frontend /api/v1/users/:id/restaurants)
   app.get(`${apiPrefix}/users/:id/restaurants`, async (req, res) => {
     try {

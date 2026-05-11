@@ -23,6 +23,7 @@ export interface Order {
   id: string;
   restaurantId: string;
   customerId: string;
+  originCustomerId?: string | null;
   tableNumber: number;
   items: OrderItem[];
   status: string; // pending, preparing, ready, delivered, payment_requested, paid, cancelled
