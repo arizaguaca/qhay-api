@@ -7,8 +7,8 @@ export class OrderController {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const order = req.body;
-      await this.orderUseCase.create(order);
-      res.status(201).json({ message: 'Order created successfully' });
+      const createdOrder = await this.orderUseCase.create(order);
+      res.status(201).json(createdOrder);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }

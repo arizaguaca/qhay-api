@@ -12,8 +12,7 @@ export class QRCodeUseCaseImpl {
       throw new Error(`La mesa número ${tableNumber} ya existe para este restaurante.`);
     }
 
-    const hash = uuidv4().split('-')[0];
-    const slugPath = `/restaurants/${restaurantId}?table=${hash}`;
+    const slugPath = `/restaurants/${restaurantId}?table=${tableNumber}`;
 
     const qrCode: QRCode = {
       id: uuidv4(),

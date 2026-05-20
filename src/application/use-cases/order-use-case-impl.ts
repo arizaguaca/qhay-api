@@ -10,7 +10,7 @@ export class OrderUseCaseImpl {
     private historyRepo: OrderStatusHistoryRepository
   ) {}
 
-  async create(order: Order): Promise<void> {
+  async create(order: Order): Promise<Order> {
     if (!order.id) {
       order.id = uuidv4();
     }
@@ -34,14 +34,14 @@ export class OrderUseCaseImpl {
       changedByUserId: null, // Initial creation usually doesn't have a staff user
     });
 
+    const fullOrder = await this.orderRepo.getById(order.id);
+
     // Notify via Socket
-    if (order.status === 'pending') {
-      // Re-fetch order from repo to get fully populated items (including prepTime from JOIN)
-      const fullOrder = await this.orderRepo.getById(order.id);
-      if (fullOrder) {
-        SocketEmitter.notifyNewOrder(order.restaurantId, fullOrder);
-      }
+    if (order.status === 'pending' && fullOrder) {
+      SocketEmitter.notifyNewOrder(order.restaurantId, fullOrder);
     }
+
+    return fullOrder || order;
   }
 
   async getById(id: string): Promise<Order | null> {
