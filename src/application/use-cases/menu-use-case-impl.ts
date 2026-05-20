@@ -88,6 +88,17 @@ export class MenuUseCaseImpl {
     }
   }
 
+  async updateAvailability(id: string, isAvailable: boolean): Promise<void> {
+    await this.menuRepo.updateAvailability(id, isAvailable);
+    const item = await this.menuRepo.getById(id);
+    if (item) {
+      SocketEmitter.notifyMenuUpdate(item.restaurantId, {
+        menuItemId: id,
+        isAvailable
+      });
+    }
+  }
+
   async delete(id: string): Promise<void> {
     await this.menuRepo.delete(id);
   }

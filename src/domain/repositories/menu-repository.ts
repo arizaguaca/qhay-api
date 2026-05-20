@@ -5,5 +5,6 @@ export interface MenuRepository {
   getById(id: string): Promise<MenuItem | null>;
   fetchByRestaurantId(restaurantId: string): Promise<MenuItem[]>;
   update(item: MenuItem): Promise<void>;
+  updateAvailability(id: string, isAvailable: boolean): Promise<void>;
   delete(id: string): Promise<void>;
 }

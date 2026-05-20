@@ -9,6 +9,7 @@ export function createMenuRoutes(menuController: MenuController): Router {
   router.get('/:id', menuController.getById.bind(menuController));
   router.get('/restaurant/:restaurantId', menuController.fetchByRestaurantId.bind(menuController));
   router.put('/:id', uploadMenuImage, menuController.update.bind(menuController));
+  router.patch('/:id/availability', menuController.updateAvailability.bind(menuController));
   router.delete('/:id', menuController.delete.bind(menuController));
 
   // Category routes

@@ -95,10 +95,101 @@ export class MySQLMenuRepository implements MenuRepository {
     );
 
     if (item.groups !== undefined) {
-      // Solo actualizamos (limpiamos y recreamos) modificadores si el front envió la propiedad groups
-      await conn.execute('DELETE FROM product_groups WHERE menu_item_id = ?', [item.id]);
-      if (item.groups && item.groups.length > 0) {
-        await this.saveModifiers(item.id, item.groups);
+      const payloadGroupIds = item.groups.map(g => g.id).filter(Boolean);
+      
+      // 1. Obtener grupos existentes en la BD para este item
+      const [dbGroups] = await conn.execute('SELECT id FROM product_groups WHERE menu_item_id = ?', [item.id]);
+      const dbGroupIds = (dbGroups as any[]).map(g => g.id);
+
+      // 2. Grupos a eliminar (están en BD pero no en el payload)
+      const groupsToDelete = dbGroupIds.filter(id => !payloadGroupIds.includes(id));
+      for (const groupId of groupsToDelete) {
+        try {
+          // Intentar eliminar opciones hijas primero
+          await conn.execute('DELETE FROM product_options WHERE product_group_id = ?', [groupId]);
+          await conn.execute('DELETE FROM product_groups WHERE id = ?', [groupId]);
+        } catch (err) {
+          // Si falla por restricción de FK (pedidos antiguos), desactivamos las opciones
+          const [dbOptions] = await conn.execute('SELECT id FROM product_options WHERE product_group_id = ?', [groupId]);
+          for (const opt of (dbOptions as any[])) {
+            await conn.execute('UPDATE product_options SET is_available = 0 WHERE id = ?', [opt.id]);
+          }
+        }
+      }
+
+      // 3. Procesar grupos del payload (Insertar o Actualizar)
+      for (const group of item.groups) {
+        const isExistingGroup = group.id && dbGroupIds.includes(group.id);
+        
+        if (isExistingGroup) {
+          await conn.execute(
+            'UPDATE product_groups SET name = ?, min_selectable = ?, max_selectable = ?, is_required = ? WHERE id = ?',
+            [
+              group.title || (group as any).name,
+              group.minSelectable ?? 0,
+              group.maxSelectable ?? 1,
+              group.isRequired ? 1 : 0,
+              group.id
+            ]
+          );
+        } else {
+          await conn.execute(
+            'INSERT INTO product_groups (id, menu_item_id, name, min_selectable, max_selectable, is_required) VALUES (?, ?, ?, ?, ?, ?)',
+            [
+              group.id,
+              item.id,
+              group.title || (group as any).name,
+              group.minSelectable ?? 0,
+              group.maxSelectable ?? 1,
+              group.isRequired ? 1 : 0
+            ]
+          );
+        }
+
+        // 4. Procesar opciones hijas de este grupo
+        const payloadOptionIds = (group.options || []).map(o => o.id).filter(Boolean);
+        const [dbOptions] = await conn.execute('SELECT id FROM product_options WHERE product_group_id = ?', [group.id]);
+        const dbOptionIds = (dbOptions as any[]).map(o => o.id);
+
+        // Opciones a eliminar
+        const optionsToDelete = dbOptionIds.filter(id => !payloadOptionIds.includes(id));
+        for (const optId of optionsToDelete) {
+          try {
+            await conn.execute('DELETE FROM product_options WHERE id = ?', [optId]);
+          } catch (err) {
+            // Si tiene pedidos asociados, simplemente la marcamos como no disponible
+            await conn.execute('UPDATE product_options SET is_available = 0 WHERE id = ?', [optId]);
+          }
+        }
+
+        // Opciones a Insertar o Actualizar
+        if (group.options) {
+          for (const option of group.options) {
+            const isExistingOption = option.id && dbOptionIds.includes(option.id);
+            if (isExistingOption) {
+              await conn.execute(
+                'UPDATE product_options SET name = ?, extra_price = ?, is_available = ? WHERE id = ?',
+                [
+                  option.name,
+                  option.extraPrice ?? 0.00,
+                  option.isAvailable !== false ? 1 : 0,
+                  option.id
+                ]
+              );
+            } else {
+              await conn.execute(
+                'INSERT INTO product_options (id, product_group_id, name, extra_price, is_available) VALUES (?, ?, ?, ?, ?)',
+                [
+                  option.id,
+                  group.id,
+                  option.name,
+                  option.extraPrice ?? 0.00,
+                  option.isAvailable !== false ? 1 : 0
+                ]
+              );
+            }
+          }
+        }
       }
     }
   }
@@ -161,6 +252,11 @@ export class MySQLMenuRepository implements MenuRepository {
       });
     }
     return groups;
+  }
+
+  async updateAvailability(id: string, isAvailable: boolean): Promise<void> {
+    const conn = this.db.getConnection();
+    await conn.execute('UPDATE menu_items SET is_available = ? WHERE id = ?', [isAvailable ? 1 : 0, id]);
   }
 
   async delete(id: string): Promise<void> {

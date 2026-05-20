@@ -89,6 +89,21 @@ export class MenuController {
     }
   }
 
+  async updateAvailability(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { isAvailable } = req.body;
+      if (isAvailable === undefined) {
+        res.status(400).json({ error: 'isAvailable is required' });
+        return;
+      }
+      await this.menuUseCase.updateAvailability(id, Boolean(isAvailable));
+      res.json({ message: 'Menu item availability updated successfully' });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
