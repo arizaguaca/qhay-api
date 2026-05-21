@@ -15,7 +15,6 @@ services:
       - "3306:3306"
     volumes:
       - qhay_db_data:/var/lib/mysql
-      # Inicializa el esquema automáticamente al primer arranque
       - ./database.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - qhay-network
@@ -36,30 +35,10 @@ services:
       - DB_NAME=${DB_NAME:-table_db}
       - DB_PORT=3306
       - JWT_SECRET=${JWT_SECRET:-jwt_super_secret_key_12345}
-      # Si utilizas Twilio, Resend o variables adicionales, añádelas aquí o a un archivo .env
     depends_on:
       - db
     volumes:
-      # Mantiene las imágenes de platos y logos persistentes al actualizar contenedores
       - qhay_uploads_data:/app/uploads
-    networks:
-      - qhay-network
-
-  # 3. Servidor Frontend (Nginx que sirve React y hace de Proxy Inverso)
-  frontend:
-    build:
-      context: ../qhay-web
-      dockerfile: Dockerfile
-      args:
-        # URL de la API necesaria al compilar React en producción (usa tu dominio)
-        - VITE_API_URL=${VITE_API_URL:-http://localhost/api/v1}
-    container_name: qhay-frontend
-    restart: always
-    ports:
-      # Expone el puerto 80 del proxy de Nginx a la máquina host
-      - "80:80"
-    depends_on:
-      - backend
     networks:
       - qhay-network
 
@@ -69,4 +48,4 @@ volumes:
 
 networks:
   qhay-network:
-    driver: bridge
+    external: true
