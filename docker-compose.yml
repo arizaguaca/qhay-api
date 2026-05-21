@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # 1. Base de datos MySQL 8.0
   db:
     image: mysql:8.0
     container_name: qhay-db
@@ -19,7 +18,6 @@ services:
     networks:
       - qhay-network
 
-  # 2. Servidor Backend (Node.js API + WebSockets)
   backend:
     build:
       context: .
@@ -28,13 +26,21 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
+      - APP_ENV=prod
       - PORT=8080
       - DB_HOST=db
       - DB_USER=${DB_USER:-db_user}
-      - DB_PASSWORD=${DB_PASSWORD:-db_password}
+      - DB_PASS=${DB_PASSWORD:-db_password}
       - DB_NAME=${DB_NAME:-table_db}
       - DB_PORT=3306
       - JWT_SECRET=${JWT_SECRET:-jwt_super_secret_key_12345}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER:-}
+      - TWILIO_WHATSAPP_NUMBER=${TWILIO_WHATSAPP_NUMBER:-}
+      - EMAIL_RESEND_API_KEY=${RESEND_API_KEY:-}
+      - EMAIL_FROM=${EMAIL_FROM:-onboarding@resend.dev}
+      - VERIFICATION_CODE_EXPIRATION_MINUTES=${VERIFICATION_CODE_EXPIRATION_MINUTES:-10}
     depends_on:
       - db
     volumes:
