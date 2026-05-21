@@ -5,6 +5,8 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
+# Copiar archivos no-TypeScript (JSON, etc.) que tsc no incluye en dist
+RUN cp -r src/config/*.json dist/config/ 2>/dev/null || true
 
 # Step 2: Production Stage
 FROM node:20-slim
