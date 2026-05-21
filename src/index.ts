@@ -175,7 +175,7 @@ async function main() {
   // Setup Routes
   const app = express();
   app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: config.frontendUrl,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

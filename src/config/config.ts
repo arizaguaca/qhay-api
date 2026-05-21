@@ -15,6 +15,7 @@ export interface Config {
   emailFrom: string;
   port: number;
   verificationCodeExpirationMinutes: number;
+  frontendUrl: string;
 }
 
 export function loadConfig(): Config {
@@ -38,5 +39,6 @@ export function loadConfig(): Config {
     emailFrom: process.env.EMAIL_FROM || 'onboarding@resend.dev',
     port: parseInt(process.env.PORT || '8080', 10),
     verificationCodeExpirationMinutes: parseInt(process.env.VERIFICATION_CODE_EXPIRATION_MINUTES || '10', 10),
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   };
 }

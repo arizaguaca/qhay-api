@@ -41,6 +41,7 @@ services:
       - EMAIL_RESEND_API_KEY=${RESEND_API_KEY:-}
       - EMAIL_FROM=${EMAIL_FROM:-onboarding@resend.dev}
       - VERIFICATION_CODE_EXPIRATION_MINUTES=${VERIFICATION_CODE_EXPIRATION_MINUTES:-10}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
     depends_on:
       - db
     volumes:
