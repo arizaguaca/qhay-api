@@ -3,7 +3,7 @@ import path from 'path';
 import mysql from 'mysql2/promise';
 
 export class MySQLConnection {
-  private connection: mysql.Connection | null = null;
+  private pool: mysql.Pool | null = null;
 
   async connect(config: {
     host: string;
@@ -13,7 +13,16 @@ export class MySQLConnection {
     port: number;
   }): Promise<void> {
     try {
-      this.connection = await mysql.createConnection(config);
+      this.pool = mysql.createPool({
+        ...config,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0
+      });
+      // Test the connection
+      await this.pool.query('SELECT 1');
     } catch (error: any) {
       throw error;
     }
@@ -97,16 +106,16 @@ export class MySQLConnection {
     }
   }
 
-  getConnection(): mysql.Connection {
-    if (!this.connection) {
+  getConnection(): mysql.Pool {
+    if (!this.pool) {
       throw new Error('Database not connected');
     }
-    return this.connection;
+    return this.pool;
   }
 
   async close(): Promise<void> {
-    if (this.connection) {
-      await this.connection.end();
+    if (this.pool) {
+      await this.pool.end();
     }
   }
 }
