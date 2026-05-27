@@ -2,7 +2,10 @@ import path from 'path';
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { loadConfig } from './config/config';
+import { JwtTokenService } from './infrastructure/security/jwt-token-service';
+import { AuthMiddleware } from './infrastructure/web/middlewares/auth-middleware';
 import { MySQLConnection } from './infrastructure/database/mysql-connection';
 import { MySQLRestaurantRepository } from './infrastructure/database/mysql-restaurant-repository';
 import { MySQLUserRepository } from './infrastructure/database/mysql-user-repository';
@@ -24,6 +27,7 @@ import { MySQLNotificationSentLogRepository } from './infrastructure/database/my
 import { MySQLServiceRequestRepository } from './infrastructure/database/mysql-service-request-repository';
 import { RestaurantUseCaseImpl } from './application/use-cases/restaurant-use-case-impl';
 import { UserUseCaseImpl } from './application/use-cases/user-use-case-impl';
+import { Role } from './domain/entities/user';
 import { CustomerUseCaseImpl } from './application/use-cases/customer-use-case-impl';
 import { MenuUseCaseImpl } from './application/use-cases/menu-use-case-impl';
 import { OperatingHourUseCaseImpl } from './application/use-cases/operating-hour-use-case-impl';
@@ -155,16 +159,20 @@ async function main() {
   const customerFavoriteUseCase = new CustomerFavoriteUseCaseImpl(customerFavoriteRepo);
   const serviceRequestUseCase = new ServiceRequestUseCaseImpl(serviceRequestRepo);
 
+  // Setup Security Services & Middlewares
+  const tokenService = new JwtTokenService(config.jwtSecret, config.jwtExpiration);
+  const authMiddleware = new AuthMiddleware(tokenService);
+
   // Setup Controllers
   const restaurantController = new RestaurantController(restaurantUseCase);
-  const userController = new UserController(userUseCase, userRegistrationUseCase);
+  const userController = new UserController(userUseCase, userRegistrationUseCase, tokenService);
   const customerController = new CustomerController(customerUseCase, customerRegistrationUseCase);
   const menuController = new MenuController(menuUseCase);
   const operatingHourController = new OperatingHourController(operatingHourUseCase);
   const orderController = new OrderController(orderUseCase);
   const qrCodeController = new QRCodeController(qrCodeUseCase);
   const reservationController = new ReservationController(reservationUseCase);
-  const verificationController = new VerificationController(verificationUseCase);
+  const verificationController = new VerificationController(verificationUseCase, tokenService, userUseCase, customerUseCase);
   const mallController = new MallController(mallUseCase);
   const cuisineTypeController = new CuisineTypeController(cuisineTypeUseCase);
   const cityController = new CityController(cityUseCase);
@@ -181,23 +189,24 @@ async function main() {
     credentials: true,
   }));
   app.use(express.json());
+  app.use(cookieParser());
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   const apiPrefix = '/api/v1';
-  app.use(`${apiPrefix}/restaurants`, createRestaurantRoutes(restaurantController));
-  app.use(`${apiPrefix}/users`, createUserRoutes(userController));
+  app.use(`${apiPrefix}/restaurants`, createRestaurantRoutes(restaurantController, authMiddleware));
+  app.use(`${apiPrefix}/users`, createUserRoutes(userController, authMiddleware));
   // legacy auth path from Go version
   app.post(`${apiPrefix}/auth/login`, userController.login.bind(userController));
 
-  app.use(`${apiPrefix}/service-requests`, createServiceRequestRoutes(serviceRequestController));
-  app.get(`${apiPrefix}/restaurants/:restaurantId/service-requests`, serviceRequestController.getByRestaurantId.bind(serviceRequestController));
-  app.get(`${apiPrefix}/customers/:customerId/service-requests`, serviceRequestController.getByCustomerId.bind(serviceRequestController));
+  app.use(`${apiPrefix}/service-requests`, createServiceRequestRoutes(serviceRequestController, authMiddleware));
+  app.get(`${apiPrefix}/restaurants/:restaurantId/service-requests`, authMiddleware.authenticate, authMiddleware.authorize([Role.OWNER, Role.ADMIN, Role.MANAGER, Role.WAITER, Role.COOK, Role.CASHIER]), serviceRequestController.getByRestaurantId.bind(serviceRequestController));
+  app.get(`${apiPrefix}/customers/:customerId/service-requests`, authMiddleware.authenticate, authMiddleware.authorize([Role.OWNER, Role.ADMIN, Role.MANAGER, Role.WAITER, Role.COOK, Role.CASHIER, 'customer']), serviceRequestController.getByCustomerId.bind(serviceRequestController));
 
-  app.get(`${apiPrefix}/restaurants/:restaurantId/tables/:tableNumber/orders`, orderController.getByTable.bind(orderController));
-  app.patch(`${apiPrefix}/restaurants/:restaurantId/tables/:tableNumber/orders/payment-status`, orderController.requestTablePayment.bind(orderController));
+  app.get(`${apiPrefix}/restaurants/:restaurantId/tables/:tableNumber/orders`, authMiddleware.authenticate, orderController.getByTable.bind(orderController));
+  app.patch(`${apiPrefix}/restaurants/:restaurantId/tables/:tableNumber/orders/payment-status`, authMiddleware.authenticate, orderController.requestTablePayment.bind(orderController));
 
   // direct user owner -> restaurants bridge route (compatibilidad con frontend /api/v1/users/:id/restaurants)
-  app.get(`${apiPrefix}/users/:id/restaurants`, async (req, res) => {
+  app.get(`${apiPrefix}/users/:id/restaurants`, authMiddleware.authenticate, authMiddleware.authorize([Role.OWNER, Role.ADMIN]), async (req, res) => {
     try {
       const ownerId = req.params.id;
       const restaurants = await restaurantUseCase.getByOwnerId(ownerId);
@@ -207,18 +216,18 @@ async function main() {
     }
   });
 
-  app.use(`${apiPrefix}/customers`, createCustomerRoutes(customerController));
-  app.use(`${apiPrefix}/menus`, createMenuRoutes(menuController));
-  app.use(`${apiPrefix}/operating-hours`, createOperatingHourRoutes(operatingHourController));
-  app.use(`${apiPrefix}/orders`, createOrderRoutes(orderController));
-  app.use(`${apiPrefix}/qrcodes`, createQRCodeRoutes(qrCodeController));
-  app.use(`${apiPrefix}/reservations`, createReservationRoutes(reservationController));
+  app.use(`${apiPrefix}/customers`, createCustomerRoutes(customerController, authMiddleware));
+  app.use(`${apiPrefix}/menus`, createMenuRoutes(menuController, authMiddleware));
+  app.use(`${apiPrefix}/operating-hours`, createOperatingHourRoutes(operatingHourController, authMiddleware));
+  app.use(`${apiPrefix}/orders`, createOrderRoutes(orderController, authMiddleware));
+  app.use(`${apiPrefix}/qrcodes`, createQRCodeRoutes(qrCodeController, authMiddleware));
+  app.use(`${apiPrefix}/reservations`, createReservationRoutes(reservationController, authMiddleware));
   app.use(`${apiPrefix}/verification`, createVerificationRoutes(verificationController));
   app.use(`${apiPrefix}/malls`, createMallRoutes(mallController));
   app.use(`${apiPrefix}/cuisine-types`, createCuisineTypeRoutes(cuisineTypeController));
   app.use(`${apiPrefix}/cities`, createCityRoutes(cityController));
-  app.use(`${apiPrefix}/order-reviews`, createOrderReviewRoutes(orderReviewController));
-  app.use(`${apiPrefix}/favorites`, createCustomerFavoriteRoutes(customerFavoriteController));
+  app.use(`${apiPrefix}/order-reviews`, createOrderReviewRoutes(orderReviewController, authMiddleware));
+  app.use(`${apiPrefix}/favorites`, createCustomerFavoriteRoutes(customerFavoriteController, authMiddleware));
 
   // Start Server with Socket.io
   const port = config.port;

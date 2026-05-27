@@ -42,7 +42,7 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
     await provider.send(contact, code);
   }
 
-  async verifyCode(contact: string, code: string): Promise<string> {
+  async verifyCode(contact: string, code: string): Promise<{ entityId: string; entityType: EntityType }> {
     const verification = await this.verifyRepo.getLatestByContact(contact);
     if (!verification || verification.code !== code || verification.expiresAt < new Date()) {
       throw new Error('Invalid or expired code');
@@ -55,7 +55,10 @@ export class VerificationUseCaseImpl implements VerificationUseCase {
     const strategy = this.getEntityStrategy(verification.channel, verification.entityType);
     await strategy.onVerified(contact);
 
-    return verification.entityId;
+    return {
+      entityId: verification.entityId,
+      entityType: verification.entityType
+    };
   }
 
   private getEntityStrategy(channel: Channel, entityType: EntityType): VerificationEntityStrategy {
