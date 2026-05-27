@@ -1,12 +1,15 @@
 import { Router } from 'express';
 import { ReservationController } from '../controllers/reservation-controller';
+import { AuthMiddleware } from '../middlewares/auth-middleware';
 
-export function createReservationRoutes(reservationController: ReservationController): Router {
+export function createReservationRoutes(reservationController: ReservationController, authMiddleware: AuthMiddleware): Router {
   const router = Router();
 
-  router.post('/', reservationController.create.bind(reservationController));
-  router.get('/:id', reservationController.getById.bind(reservationController));
-  // Add more routes as needed
+  // Create reservation: any authenticated user/customer
+  router.post('/', authMiddleware.authenticate, reservationController.create.bind(reservationController));
+
+  // View reservation: any authenticated user/customer
+  router.get('/:id', authMiddleware.authenticate, reservationController.getById.bind(reservationController));
 
   return router;
 }

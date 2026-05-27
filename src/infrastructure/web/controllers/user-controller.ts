@@ -3,11 +3,14 @@ import { UserUseCaseImpl } from '../../../application/use-cases/user-use-case-im
 import { UserRegistrationUseCase } from '../../../application/use-cases/registration/user-registration-use-case';
 import { Role } from '../../../domain/entities/user';
 import { Channel } from '../../../domain/entities/verification-code';
+import { TokenService } from '../../../application/services/token-service';
+import { setTokenCookie, clearTokenCookie } from '../cookie-helper';
 
 export class UserController {
   constructor(
     private userUseCase: UserUseCaseImpl,
-    private userRegistrationUseCase: UserRegistrationUseCase
+    private userRegistrationUseCase: UserRegistrationUseCase,
+    private tokenService: TokenService
   ) { }
 
   async create(req: Request, res: Response): Promise<void> {
@@ -115,7 +118,29 @@ export class UserController {
         res.status(401).json({ error: 'Invalid credentials' });
         return;
       }
-      res.json(user);
+
+      // Generate JWT token
+      const token = this.tokenService.generateToken({
+        userId: user.id,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        restaurantId: user.restaurantId
+      });
+
+      // Set HttpOnly cookie
+      setTokenCookie(res, token);
+
+      res.json(this.sanitizeUser(user));
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  async logout(req: Request, res: Response): Promise<void> {
+    try {
+      clearTokenCookie(res);
+      res.json({ message: 'Logged out successfully' });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
@@ -129,7 +154,7 @@ export class UserController {
         res.status(404).json({ error: 'User not found' });
         return;
       }
-      res.json(user);
+      res.json(this.sanitizeUser(user));
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
@@ -143,7 +168,7 @@ export class UserController {
         res.status(404).json({ error: 'User not found' });
         return;
       }
-      res.json(user);
+      res.json(this.sanitizeUser(user));
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
@@ -157,7 +182,7 @@ export class UserController {
         res.status(404).json({ error: 'User not found' });
         return;
       }
-      res.json(user);
+      res.json(this.sanitizeUser(user));
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
@@ -167,7 +192,7 @@ export class UserController {
     try {
       const { restaurantId } = req.params;
       const users = await this.userUseCase.getStaffByRestaurant(restaurantId);
-      res.json(users);
+      res.json(users.map(user => this.sanitizeUser(user)));
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
@@ -176,10 +201,16 @@ export class UserController {
   async fetch(req: Request, res: Response): Promise<void> {
     try {
       const users = await this.userUseCase.fetch();
-      res.json(users);
+      res.json(users.map(user => this.sanitizeUser(user)));
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
+  }
+
+  private sanitizeUser(user: any): any {
+    if (!user) return null;
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   async update(req: Request, res: Response): Promise<void> {

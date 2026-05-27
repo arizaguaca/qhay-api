@@ -1,13 +1,22 @@
 import { Router } from 'express';
 import { QRCodeController } from '../controllers/qrcode-controller';
+import { AuthMiddleware } from '../middlewares/auth-middleware';
+import { Role } from '../../../domain/entities/user';
 
-export function createQRCodeRoutes(qrCodeController: QRCodeController): Router {
+export function createQRCodeRoutes(qrCodeController: QRCodeController, authMiddleware: AuthMiddleware): Router {
   const router = Router();
 
-  router.post('/', qrCodeController.generate.bind(qrCodeController));
-  router.get('/:id', qrCodeController.getById.bind(qrCodeController));
-  router.get('/restaurant/:restaurantId', qrCodeController.getByRestaurantId.bind(qrCodeController));
-  router.delete('/:id', qrCodeController.delete.bind(qrCodeController));
+  const writeRoles = [Role.OWNER, Role.ADMIN, Role.MANAGER];
+
+  // Write actions (Owner/Admin/Manager)
+  router.post('/', authMiddleware.authenticate, authMiddleware.authorize(writeRoles), qrCodeController.generate.bind(qrCodeController));
+  router.delete('/:id', authMiddleware.authenticate, authMiddleware.authorize(writeRoles), qrCodeController.delete.bind(qrCodeController));
+
+  // Query all QR codes for restaurant (restricted to staff)
+  router.get('/restaurant/:restaurantId', authMiddleware.authenticate, authMiddleware.authorize(writeRoles), qrCodeController.getByRestaurantId.bind(qrCodeController));
+
+  // Read single QR code (authenticated: customer & staff)
+  router.get('/:id', authMiddleware.authenticate, qrCodeController.getById.bind(qrCodeController));
 
   return router;
 }
