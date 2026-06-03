@@ -4,7 +4,7 @@ import { UserRegistrationUseCase } from '../../../application/use-cases/registra
 import { Role } from '../../../domain/entities/user';
 import { Channel } from '../../../domain/entities/verification-code';
 import { TokenService } from '../../../application/services/token-service';
-import { setTokenCookie, clearTokenCookie } from '../cookie-helper';
+import { setTokenCookie, clearTokenCookie, clearCustomerTokenCookie } from '../cookie-helper';
 
 export class UserController {
   constructor(
@@ -140,6 +140,7 @@ export class UserController {
   async logout(req: Request, res: Response): Promise<void> {
     try {
       clearTokenCookie(res);
+      clearCustomerTokenCookie(res);
       res.json({ message: 'Logged out successfully' });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });

@@ -34,10 +34,10 @@ export class SocketEmitter {
   }
 
   /**
-   * Notifica actualizaciones de estado de pedidos (opcional, útil para el cliente).
+   * Notifica actualizaciones de estado de pedidos (dirigido al cliente específico del pedido).
    */
-  public static notifyOrderStatusUpdate(restaurantId: string, orderId: string, status: string): void {
-    this.service.emitToRestaurant(restaurantId, 'order_status_update', {
+  public static notifyOrderStatusUpdate(customerId: string, orderId: string, status: string): void {
+    this.service.emitToCustomer(customerId, 'order_status_update', {
       orderId,
       status,
     });

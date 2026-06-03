@@ -9,4 +9,5 @@ export interface OrderRepository {
   updateStatus(id: string, status: string): Promise<void>;
   updateCustomerAndOrigin(id: string, customerId: string, originCustomerId: string): Promise<void>;
   update(order: Order): Promise<void>;
+  fetchMetricsByRestaurantId(restaurantId: string): Promise<any>;
 }

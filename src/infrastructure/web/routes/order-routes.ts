@@ -19,8 +19,23 @@ export function createOrderRoutes(orderController: OrderController, authMiddlewa
     orderController.fetch.bind(orderController)
   );
 
+  // Public endpoint: fetch orders for a specific customer (no staff role required)
+  router.get(
+    '/customer/:customerId',
+    authMiddleware.authenticate,
+    orderController.getByCustomer.bind(orderController)
+  );
+
   // View specific order: any authenticated user/customer
   router.get('/:id', authMiddleware.authenticate, orderController.getById.bind(orderController));
+
+  // Get metrics for a restaurant: restricted to staff
+  router.get(
+    '/restaurant/:restaurantId/metrics',
+    authMiddleware.authenticate,
+    authMiddleware.authorize(staffRoles),
+    orderController.getMetrics.bind(orderController)
+  );
 
   // Update order status: restricted to staff
   router.patch(

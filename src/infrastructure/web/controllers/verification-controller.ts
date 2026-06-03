@@ -4,7 +4,7 @@ import { EntityType } from '../../../domain/entities/verification-code';
 import { TokenService } from '../../../application/services/token-service';
 import { UserUseCaseImpl } from '../../../application/use-cases/user-use-case-impl';
 import { CustomerUseCaseImpl } from '../../../application/use-cases/customer-use-case-impl';
-import { setTokenCookie } from '../cookie-helper';
+import { setTokenCookie, setCustomerTokenCookie } from '../cookie-helper';
 
 export class VerificationController {
   constructor(
@@ -70,8 +70,12 @@ export class VerificationController {
         role,
       });
 
-      // Set HttpOnly cookie
-      setTokenCookie(res, token);
+      // Set HttpOnly cookie — use separate cookie names to avoid overwriting
+      if (role === 'customer') {
+        setCustomerTokenCookie(res, token);
+      } else {
+        setTokenCookie(res, token);
+      }
 
       res.json({ entityId, entityType, role });
     } catch (error) {

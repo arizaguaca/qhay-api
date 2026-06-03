@@ -12,8 +12,8 @@ export class AuthMiddleware {
    * Middleware to authenticate the request by verifying the JWT cookie (or Bearer token).
    */
   authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-    // Read from cookies (provided by cookie-parser)
-    let token = req.cookies?.token;
+    // Read from cookies — prioritize staff token over customer token
+    let token = req.cookies?.token || req.cookies?.customer_token;
 
     // Fallback: Read from Authorization header
     if (!token && req.headers.authorization) {
@@ -49,6 +49,7 @@ export class AuthMiddleware {
       }
 
       if (!allowedRoles.includes(req.user.role)) {
+        console.warn(`[AUTH] Access denied — user role: "${req.user.role}" | allowed: [${allowedRoles.join(', ')}] | path: ${req.originalUrl}`);
         res.status(403).json({ error: 'Access denied: insufficient permissions' });
         return;
       }

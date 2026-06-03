@@ -85,4 +85,25 @@ export class OrderController {
       res.status(500).json({ error: (error as Error).message });
     }
   }
+
+  // New endpoint: fetch orders for a specific customer (public menu)
+  async getByCustomer(req: Request, res: Response): Promise<void> {
+    try {
+      const { customerId } = req.params;
+      const orders = await this.orderUseCase.getByCustomerId(customerId);
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  async getMetrics(req: Request, res: Response): Promise<void> {
+    try {
+      const { restaurantId } = req.params;
+      const metrics = await this.orderUseCase.getMetricsByRestaurantId(restaurantId);
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
 }

@@ -16,8 +16,8 @@ RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY database.sql ./
 
-# Aseguramos directorio para subida de imágenes
-RUN mkdir -p uploads/menu
+# Aseguramos directorios para subida de imágenes
+RUN mkdir -p uploads/menu uploads/logos
 
 EXPOSE 8080
 ENV NODE_ENV=production

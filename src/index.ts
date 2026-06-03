@@ -193,7 +193,7 @@ async function main() {
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   const apiPrefix = '/api/v1';
-  app.use(`${apiPrefix}/restaurants`, createRestaurantRoutes(restaurantController, authMiddleware));
+  app.use(`${apiPrefix}/restaurants`, createRestaurantRoutes(restaurantController, authMiddleware, tokenService));
   app.use(`${apiPrefix}/users`, createUserRoutes(userController, authMiddleware));
   // legacy auth path from Go version
   app.post(`${apiPrefix}/auth/login`, userController.login.bind(userController));

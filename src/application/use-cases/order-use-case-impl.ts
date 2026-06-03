@@ -83,7 +83,7 @@ export class OrderUseCaseImpl {
 
       const updatedOrder = await this.orderRepo.getById(order.id);
       if (updatedOrder) {
-        SocketEmitter.notifyOrderStatusUpdate(restaurantId, order.id, 'payment_requested');
+        SocketEmitter.notifyOrderStatusUpdate(order.customerId, order.id, 'payment_requested');
       }
     }
 
@@ -110,7 +110,11 @@ export class OrderUseCaseImpl {
     // Notify status update
     const order = await this.orderRepo.getById(id);
     if (order) {
-      SocketEmitter.notifyOrderStatusUpdate(order.restaurantId, id, status);
+       SocketEmitter.notifyOrderStatusUpdate(order.customerId, id, status);
     }
+  }
+
+  async getMetricsByRestaurantId(restaurantId: string): Promise<any> {
+    return await this.orderRepo.fetchMetricsByRestaurantId(restaurantId);
   }
 }

@@ -205,4 +205,74 @@ export class MySQLOrderRepository implements OrderRepository {
 
     return items;
   }
+
+  async fetchMetricsByRestaurantId(restaurantId: string): Promise<any> {
+    const conn = this.db.getConnection();
+
+    // 1. General Metrics (Total sales, count of orders, ticket average)
+    const [summaryRows] = await conn.execute(
+      `SELECT 
+        COALESCE(SUM(total_amount), 0) as totalSales, 
+        COUNT(*) as totalOrders,
+        COALESCE(AVG(total_amount), 0) as ticketAverage
+       FROM orders 
+       WHERE restaurant_id = ? AND status = 'paid'`,
+      [restaurantId]
+    );
+    const summary = (summaryRows as any[])[0];
+
+    // 2. Top 3 Selling Dishes
+    const [topDishesRows] = await conn.execute(
+      `SELECT 
+        oi.menu_item_id as menuItemId,
+        oi.name as name,
+        SUM(oi.quantity) as totalQty,
+        SUM(oi.quantity * oi.unit_price) as totalRevenue
+       FROM order_items oi
+       JOIN orders o ON oi.order_id = o.id
+       WHERE o.restaurant_id = ? AND o.status = 'paid'
+       GROUP BY oi.menu_item_id, oi.name
+       ORDER BY totalQty DESC
+       LIMIT 3`,
+      [restaurantId]
+    );
+
+    // 3. Slowest Orders (Difference between 'pending' and 'ready' or 'delivered' states in order_status_history)
+    // We compute the duration in minutes by finding the time difference between creation and the 'ready' or 'delivered' status updates.
+    const [slowestOrdersRows] = await conn.execute(
+      `SELECT 
+        o.id as orderId,
+        o.table_number as tableNumber,
+        o.total_amount as totalAmount,
+        o.created_at as createdAt,
+        TIMESTAMPDIFF(SECOND, o.created_at, MAX(h.changed_at)) as durationSeconds
+       FROM orders o
+       JOIN order_status_history h ON o.id = h.order_id
+       WHERE o.restaurant_id = ? 
+         AND h.status IN ('ready', 'delivered')
+       GROUP BY o.id, o.table_number, o.total_amount, o.created_at
+       ORDER BY durationSeconds DESC
+       LIMIT 3`,
+      [restaurantId]
+    );
+
+    return {
+      totalSales: Number(summary.totalSales),
+      totalOrders: Number(summary.totalOrders),
+      ticketAverage: Number(summary.ticketAverage),
+      topDishes: (topDishesRows as any[]).map(row => ({
+        menuItemId: row.menuItemId,
+        name: row.name,
+        quantity: Number(row.totalQty),
+        revenue: Number(row.totalRevenue)
+      })),
+      slowestOrders: (slowestOrdersRows as any[]).map(row => ({
+        orderId: row.orderId,
+        tableNumber: row.tableNumber,
+        totalAmount: Number(row.totalAmount),
+        createdAt: row.createdAt,
+        durationSeconds: Number(row.durationSeconds)
+      }))
+    };
+  }
 }
